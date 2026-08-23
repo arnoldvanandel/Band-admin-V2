@@ -5,7 +5,7 @@
 //  eigen offline-persistentie via IndexedDB.
 // ============================================================================
 
-const VERSION = "v42";
+const VERSION = "v43";
 const APP_SHELL_CACHE = `band-admin-shell-${VERSION}`;
 const RUNTIME_CACHE = `band-admin-runtime-${VERSION}`;
 
@@ -13,9 +13,11 @@ const RUNTIME_CACHE = `band-admin-runtime-${VERSION}`;
 const APP_SHELL = [
   "/",
   "/index.html",
-  "/css/styles.css",
+  "/styles.css",
+  "/logo-small.png",
   "/js/app.js",
   "/js/auth.js",
+  "/js/chord-diagram.js",
   "/js/firestore.js",
   "/js/firebase-config.js",
   "/js/song-format.js",
