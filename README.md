@@ -42,16 +42,17 @@ cp js/firebase-config.example.js js/firebase-config.js
 Vul daarna in `js/firebase-config.js` de waarden in uit:
 Firebase Console → Projectinstellingen → Je apps → SDK setup & config.
 
+De config ondersteunt twee Hosting-sites binnen één project: op basis van de
+hostname wordt de juiste appId gekozen (test vs live). De rest van de config
+(projectId, apiKey, …) is voor beide sites identiek.
+
 Let op: een Firebase **web**-API-sleutel is geen geheim (bezoekers kunnen hem
 in de browser zien). De beveiliging van je data wordt geregeld door de
 Firestore Security Rules, niet door de sleutel.
 
-## Ontbrekende, niet-kritieke bestanden
-Deze twee PWA-bestanden werden niet teruggevonden bij de reconstructie,
-de app werkt prima zonder, maar voor volledige PWA/installeerbaarheid
-kun je ze opnieuw aanmaken:
-- `manifest.webmanifest` (in de hoofdmap)
-- `icons/icon-192.png` (in `icons/`)
+## PWA-bestanden
+De PWA-bestanden (`manifest.webmanifest`, `sw.js`, `icons/icon-192.png`,
+`icons/icon-512.png`) zijn aanwezig en worden mee gedeployed.
 
 ## Git
 Deze repository staat op GitHub en is openbaar. `js/firebase-config.js` wordt
