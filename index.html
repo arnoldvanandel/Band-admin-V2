@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kolonel &amp; The Parkers — Songbeheer</title>
+
+  <!-- PWA: installeerbaar en offline bruikbaar -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Band Admin">
+
+  <!-- Tailwind via CDN voor snelle, moderne styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Roboto Mono voor de akkoord/tekst-uitlijning -->
+  <link rel="preconnect" href="https://fonts.googleapis.com/">
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100 text-gray-900 min-h-screen">
+
+  <!-- ====================================================================
+       Topbar (alleen zichtbaar wanneer ingelogd)
+       ==================================================================== -->
+  <header id="topbar" class="bg-white border-b border-gray-200 sticky top-0 z-20">
+    <div class="max-w-4xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between">
+      <div class="flex items-center gap-1 sm:gap-2 min-w-0 shrink-0">
+        <button id="brand" class="flex items-center gap-1 font-bold text-base text-blue-600 shrink-0">
+          <img src="logo-small.png" alt="Kolomel" class="h-6 w-6">
+        </button>
+        <span id="netStatus" class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap bg-green-100 text-green-700">● Online</span>
+      </div>
+      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+        <!-- Muzikant-kiezer als icoontje met dropdown -->
+        <div class="relative">
+          <button id="topInstrumentBtn" title="Kies muzikant/instrument" class="text-base px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+            🎸
+          </button>
+          <div id="topInstrumentMenu" class="hidden absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30 min-w-[160px]">
+            <button data-inst="all" class="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center gap-2">🎵 Alle muzikanten</button>
+            <button data-inst="general" class="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100">Algemeen</button>
+            <button data-inst="drums" class="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100">Drums</button>
+            <button data-inst="guitar" class="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100">Gitaar 1</button>
+            <button data-inst="guitar2" class="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100">Gitaar 2</button>
+            <button data-inst="guitar3" class="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100">Gitaar 3</button>
+            <button data-inst="bass" class="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100">Bas</button>
+            <button data-inst="keys" class="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100">Toetsen</button>
+            <button data-inst="vocals" class="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100">Zang</button>
+          </div>
+        </div>
+        <button id="topFootswitch" class="hidden text-sm px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">
+          🦶 Voetschakelaar: <span id="topFootswitchState">uit</span>
+        </button>
+        <button id="topAutoscroll" class="hidden text-sm px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">
+          ⏱ Autoscroll: <span id="topAutoscrollState">uit</span>
+        </button>
+        <button id="topSetlist" title="Setlist beheren" class="text-base px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+          🎵
+        </button>
+        <button id="topSettings" title="Instellingen" class="text-base px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+          ⚙️
+        </button>
+        <a id="topSpotify" href="https://band-admin-76dad.web.app/#" target="_blank" rel="noopener" title="Open op Spotify" class="hidden px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 no-underline inline-flex items-center">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="#1DB954" class="shrink-0">
+            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"></path>
+          </svg>
+        </a>
+        <button id="topSave" title="Opslaan" type="button" class="hidden text-base px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+          💾
+        </button>
+        <button id="topCancelEdit" title="Terug" class="hidden text-base px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+          ←
+        </button>
+        <span id="userEmail" class="text-sm text-gray-500 hidden sm:inline">ava@fmid.nl</span>
+        <button id="logoutBtn" class="text-sm px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200">
+          Uitloggen
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-6">
+
+    <!-- ==================================================================
+         VIEW: Login
+         ================================================================== -->
+    <section id="view-login" class="view">
+      <div class="max-w-sm mx-auto mt-16 bg-white rounded-2xl shadow p-8">
+        <div class="flex items-center gap-2 mb-3">
+          <img src="logo-small.png" alt="Kolomel" class="h-8 w-8">
+          <h1 class="text-2xl font-bold">Kolonel &amp; The Parkers</h1>
+        </div>
+        <p class="text-gray-500 mb-6">Log in om liedjes te beheren.</p>
+
+        <form id="loginForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1" for="loginEmail">E-mail</label>
+            <input id="loginEmail" type="email" required="" autocomplete="email" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="loginPassword">Wachtwoord</label>
+            <input id="loginPassword" type="password" required="" autocomplete="current-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <p id="loginError" class="text-sm text-red-600 hidden"></p>
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2.5">
+            Inloggen
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW: Dashboard (lijst met liedjes)
+         ================================================================== -->
+    <section id="view-dashboard" class="view active">
+      <div class="flex items-center justify-between mb-3">
+        <h1 class="text-2xl font-bold">Liedjes</h1>
+        <div class="flex items-center gap-2">
+          <button id="dashboardSetlistBtn" title="Setlist beheren" aria-label="Setlist beheren" class="bg-green-600 hover:bg-green-700 text-white text-xl rounded-lg px-3 py-2 leading-none">
+            🎵
+          </button>
+          <button id="newSongBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2">
+            + Nieuw liedje
+          </button>
+        </div>
+      </div>
+
+      <input id="songSearch" type="search" placeholder="Zoek op titel of artiest…" class="w-full mb-4 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+
+      <div id="songList" class="space-y-2"><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Aan De Kust</div>
+        <div class="text-sm text-gray-500 truncate">Blof</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">All I Want Is You</div>
+        <div class="text-sm text-gray-500 truncate">U2</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">All Shook Up</div>
+        <div class="text-sm text-gray-500 truncate">Elvis Presley</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Als ze er niet is</div>
+        <div class="text-sm text-gray-500 truncate">De Dijk</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Angel of Harlem</div>
+        <div class="text-sm text-gray-500 truncate">U2</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Arkensas</div>
+        <div class="text-sm text-gray-500 truncate">Chris Stapleton</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Atlas</div>
+        <div class="text-sm text-gray-500 truncate">Pommelien Thijs</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Bad Moon Rising</div>
+        <div class="text-sm text-gray-500 truncate">CCR</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Bad dreams</div>
+        <div class="text-sm text-gray-500 truncate">Teddy Swims</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Baila de Gasolina</div>
+        <div class="text-sm text-gray-500 truncate">Effe Serieus</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Beast of Burden</div>
+        <div class="text-sm text-gray-500 truncate">Bette Midler</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Blue suede shoes</div>
+        <div class="text-sm text-gray-500 truncate">Elvis Presley</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Cheerio</div>
+        <div class="text-sm text-gray-500 truncate">Justen de Wildt</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Crazy little thing called love</div>
+        <div class="text-sm text-gray-500 truncate">Queen</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Dancing in the moonlight</div>
+        <div class="text-sm text-gray-500 truncate">Thin Lizzy</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">De Fiets</div>
+        <div class="text-sm text-gray-500 truncate">De Steeg</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Don't be cruel</div>
+        <div class="text-sm text-gray-500 truncate">Elvis Presley</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Echte Liefde Is Te Koop</div>
+        <div class="text-sm text-gray-500 truncate">Samuel Welten</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Falsom Prison Blues</div>
+        <div class="text-sm text-gray-500 truncate">Johnny Cash</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Foxie Foxtrot</div>
+        <div class="text-sm text-gray-500 truncate">Nico Haak</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">GOOD 'N BAD OLD TIMES</div>
+        <div class="text-sm text-gray-500 truncate">Kiki Busio</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Gina Lollobrigida</div>
+        <div class="text-sm text-gray-500 truncate">Tony Bass</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Good Riddance</div>
+        <div class="text-sm text-gray-500 truncate">Green Day</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Head over Feet</div>
+        <div class="text-sm text-gray-500 truncate">Alanis Morissette</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Hee Gaode Mee</div>
+        <div class="text-sm text-gray-500 truncate">Gerard van Maasakkers</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Hey Jude</div>
+        <div class="text-sm text-gray-500 truncate">The Beatles</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Hold Me</div>
+        <div class="text-sm text-gray-500 truncate">Douwe Bob en Anouk</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Honolulu</div>
+        <div class="text-sm text-gray-500 truncate">De Fik Erin</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">I Alone</div>
+        <div class="text-sm text-gray-500 truncate">Live</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">I Would Stay</div>
+        <div class="text-sm text-gray-500 truncate">Krezip</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">I can see clearly now</div>
+        <div class="text-sm text-gray-500 truncate">Johnny Nash</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">I want it all</div>
+        <div class="text-sm text-gray-500 truncate">Queen</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">In Repair</div>
+        <div class="text-sm text-gray-500 truncate">John Mayer</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Ironic</div>
+        <div class="text-sm text-gray-500 truncate">Alanis Morissette</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Islands in the stream</div>
+        <div class="text-sm text-gray-500 truncate">Dolly Parton</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">It’s All Over Now</div>
+        <div class="text-sm text-gray-500 truncate">Rolling Stones</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Johnny B. Goode</div>
+        <div class="text-sm text-gray-500 truncate">Chuck Berry</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Jolene</div>
+        <div class="text-sm text-gray-500 truncate">Dolly Parton</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Jump around</div>
+        <div class="text-sm text-gray-500 truncate">House of Pain</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Keetje Tippel</div>
+        <div class="text-sm text-gray-500 truncate">Zangeres zonder naam</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Killing in the name of</div>
+        <div class="text-sm text-gray-500 truncate">Rage against the machine</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Kiss Me</div>
+        <div class="text-sm text-gray-500 truncate">Sixpence None The Richer</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Lift me up</div>
+        <div class="text-sm text-gray-500 truncate">Rihanna</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Lola Montez</div>
+        <div class="text-sm text-gray-500 truncate">Volbeat</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Love me like a man</div>
+        <div class="text-sm text-gray-500 truncate">Bonnie Raitt</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Love on the brain</div>
+        <div class="text-sm text-gray-500 truncate">Rihanna</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">M n Fles die is weer leeg</div>
+        <div class="text-sm text-gray-500 truncate">De Steeg</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Maar vanavond heb ik hoofdpijn</div>
+        <div class="text-sm text-gray-500 truncate">Hanny</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Make you a believer</div>
+        <div class="text-sm text-gray-500 truncate">Sass Jordan</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Mona Lisa</div>
+        <div class="text-sm text-gray-500 truncate">Robert van Hemert</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Mooi was die tijd</div>
+        <div class="text-sm text-gray-500 truncate">Corry Konings</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Mr. Blue Sky</div>
+        <div class="text-sm text-gray-500 truncate">Electric Light Orchestra</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Neem Me Mee</div>
+        <div class="text-sm text-gray-500 truncate">Abel</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">No Rain</div>
+        <div class="text-sm text-gray-500 truncate">Blind Melon</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Peaches</div>
+        <div class="text-sm text-gray-500 truncate">The presidents of the united states of the america</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Proosten</div>
+        <div class="text-sm text-gray-500 truncate">Guus Meeuwis</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Revival</div>
+        <div class="text-sm text-gray-500 truncate">Zach Bryan</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Roadhouse Blues</div>
+        <div class="text-sm text-gray-500 truncate">The Doors</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Rode Rozen</div>
+        <div class="text-sm text-gray-500 truncate">Jantje Koopmans</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Run to You</div>
+        <div class="text-sm text-gray-500 truncate">Brian Adams</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Sarà Perché Ti Amo</div>
+        <div class="text-sm text-gray-500 truncate">Ricchi e Poveri</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Sex on Fire</div>
+        <div class="text-sm text-gray-500 truncate">Kings of Leon</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Sharp dressed man</div>
+        <div class="text-sm text-gray-500 truncate">ZZ top</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Sinds een dag of twee (32 jaar)</div>
+        <div class="text-sm text-gray-500 truncate">Doe Maar</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">So incredible</div>
+        <div class="text-sm text-gray-500 truncate">Ilse de Lange</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Something's Wrong</div>
+        <div class="text-sm text-gray-500 truncate">K's choice</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Summer of  69</div>
+        <div class="text-sm text-gray-500 truncate">Brian Adams</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Summer of  69 K&amp;P Version</div>
+        <div class="text-sm text-gray-500 truncate">Kolonel and the Parkers</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Tennessee Whiskey</div>
+        <div class="text-sm text-gray-500 truncate">Chris Stapleton</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">The Dark</div>
+        <div class="text-sm text-gray-500 truncate">Anouk</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Tie your mother down</div>
+        <div class="text-sm text-gray-500 truncate">Queen</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">What's up</div>
+        <div class="text-sm text-gray-500 truncate">4 Non Blondes</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Wij zijn Kolonel and the Parkers</div>
+        <div class="text-sm text-gray-500 truncate">Kolonel and the Parkers</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Zijn het je ogen</div>
+        <div class="text-sm text-gray-500 truncate">Danny Vera</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Zin in jou</div>
+        <div class="text-sm text-gray-500 truncate">Yves Berende</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Zoet Zout Zuur</div>
+        <div class="text-sm text-gray-500 truncate">Robert van Hemert</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Zolang je bij me bent</div>
+        <div class="text-sm text-gray-500 truncate">Jan Smit</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div><div class="bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center"><button type="button" class="shrink-0 pl-4 pr-2 py-4 text-sm leading-none transition text-amber-500 hover:text-amber-600" title="In liedjeskiezer — klik om uit te zetten" aria-pressed="true">🎲</button><button class="flex-1 text-left pl-2 pr-4 py-4 flex items-center justify-between min-w-0">
+      <div class="min-w-0">
+        <div class="font-semibold truncate">Zwoele zomernachten</div>
+        <div class="text-sm text-gray-500 truncate">Rutger van Barneveld</div>
+      </div>
+      <span class="text-gray-300 ml-2">›</span></button><button class="shrink-0 px-4 py-4 text-gray-300 hover:text-red-600" title="Liedje verwijderen">🗑</button></div></div>
+      <p id="songListEmpty" class="hidden text-gray-500 text-center py-10">
+        Nog geen liedjes. Voeg er eentje toe!
+      </p>
+    </section>
+
+    <!-- ==================================================================
+         VIEW: Song View
+         ================================================================== -->
+    <section id="view-song" class="view">
+
+      <!-- Live-navigatiebalk (alleen zichtbaar bij afspelen vanuit een setlist) -->
+      <div id="setlistNav" class="hidden flex items-center justify-between gap-2 mb-4 bg-green-50 border border-green-200 rounded-xl px-3 py-2">
+        <button id="setlistPrevBtn" type="button" class="text-sm px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-40">
+          ‹ Vorig
+        </button>
+        <div class="text-center leading-tight">
+          <button id="setlistBackBtn" type="button" class="text-sm font-medium text-green-700 hover:underline">
+            ↩ Terug naar setlist
+          </button>
+          <div id="setlistNavCounter" class="text-xs text-gray-500"></div>
+        </div>
+        <button id="setlistNextBtn" type="button" class="text-sm px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-40">
+          Volgend ›
+        </button>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-5 mb-4">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h1 id="songTitle" class="text-2xl font-bold"></h1>
+            <p id="songArtist" class="text-gray-500"></p>
+            <p id="songMeta" class="text-sm text-gray-400 mt-1"></p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button id="addGeneralNoteBtn" title="Algemene opmerking toevoegen" class="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xl leading-none">
+              +
+            </button>
+            <button id="editSongBtn" class="text-sm px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200">
+              Bewerken
+            </button>
+          </div>
+        </div>
+
+        <!-- Inline formulier voor algemene opmerking (verborgen tot '+') -->
+        <form id="generalNoteForm" class="hidden mt-3 flex flex-col sm:flex-row gap-2">
+          <select id="generalNoteInstrument" class="border border-gray-300 rounded-lg px-3 py-2 sm:w-40 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="general">Algemeen</option>
+            <option value="drums">Drums</option>
+            <option value="guitar">Gitaar 1</option>
+            <option value="guitar2">Gitaar 2</option>
+            <option value="guitar3">Gitaar 3</option>
+            <option value="bass">Bas</option>
+            <option value="keys">Toetsen</option>
+            <option value="vocals">Zang</option>
+          </select>
+          <input id="generalNoteText" type="text" placeholder="Algemene opmerking voor dit liedje…" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2">
+            Toevoegen
+          </button>
+        </form>
+
+        <!-- Lijst met algemene opmerkingen (gefilterd op muzikant) -->
+        <div id="generalNotesList" class="mt-3 space-y-2"></div>
+      </div>
+
+      <!-- De songtekst met akkoorden (+ transparante tekenlaag als overlay) -->
+      <div id="songCard" class="bg-white rounded-2xl shadow p-5 relative">
+        <div id="songBody" class="song-body"></div>
+        <canvas id="drawCanvas"></canvas>
+      </div>
+
+      <!-- Zwevende knop linksonder om naar beneden te scrollen -->
+      <button id="scrollDownBtn" type="button" title="Naar beneden scrollen" aria-label="Naar beneden scrollen">↓</button>
+
+      <!-- Zwevende teken-werkbalk rechtsonder -->
+      <div id="drawToolbar" style="display: none;">
+        <button id="drawEraser" type="button" class="draw-tool" title="Gum" aria-label="Gum">🧽</button>
+        <button id="drawPencil" type="button" class="draw-tool" title="Potlood" aria-label="Potlood">✏️</button>
+        <button id="drawHighlighter" type="button" class="draw-tool" title="Arceerstift" aria-label="Arceerstift">🖍️</button>
+        <button id="drawClear" type="button" title="Tekening wissen" aria-label="Wissen">🗑️</button>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW: Song Editor
+         ================================================================== -->
+    <section id="view-editor" class="view">
+      <h1 id="editorTitle" class="text-2xl font-bold mb-5">Nieuw liedje</h1>
+
+      <form id="songForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="fTitle">Titel</label>
+          <input id="fTitle" required="" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="col-span-2">
+            <label class="block text-sm font-medium mb-1" for="fArtist">Artiest</label>
+            <input id="fArtist" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="fCapo">Capo</label>
+            <input id="fCapo" type="number" min="0" value="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="fBpm">BPM</label>
+            <input id="fBpm" type="number" min="0" value="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="fScrollFactor">Scroll-factor (met komma of punt)</label>
+            <input id="fScrollFactor" type="number" min="0.1" step="0.05" value="1.0" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="1.0" title="1,0 = normaal; 1,5 = 50% sneller; 0,8 = 20% langzamer">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="fSpotify">Spotify-link</label>
+          <div class="flex gap-2">
+            <input id="fSpotify" type="url" placeholder="https://open.spotify.com/track/..." class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <button type="button" id="fetchSpotifyBtn" title="Titel en artiest ophalen van Spotify" class="shrink-0 whitespace-nowrap text-sm px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700 disabled:opacity-50">
+              ✨ Haal gegevens op
+            </button>
+          </div>
+          <p id="spotifyStatus" class="text-xs mt-1 hidden"></p>
+        </div>
+
+        <!-- Import: PDF of bulk-tekst (inklapbaar) -->
+        <details class="border border-gray-200 rounded-lg bg-gray-50">
+          <summary class="cursor-pointer select-none px-4 py-2.5 text-sm font-medium">
+            📥 Importeren — PDF uploaden of volledige songtekst plakken
+          </summary>
+          <div class="px-4 pb-4 space-y-3">
+            <!-- PDF drag & drop -->
+            <label id="pdfDrop" for="pdfInput" class="block border-2 border-dashed border-gray-300 rounded-lg p-5 text-center text-sm text-gray-500 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+              <div class="pointer-events-none">
+                📄 Sleep hier een PDF-chordsheet naartoe, of
+                <span class="text-blue-600 font-medium">klik om te kiezen</span>.
+                <div class="text-xs text-gray-400 mt-1">
+                  Akkoorden en tekst worden automatisch uitgelezen en in secties gezet.
+                </div>
+              </div>
+            </label>
+            <input id="pdfInput" type="file" accept="application/pdf" class="hidden">
+            <p id="pdfStatus" class="text-xs hidden"></p>
+
+            <!-- Bulk tekst plakken -->
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1" for="fBulk">
+                …of plak hier de volledige songtekst
+              </label>
+              <p class="text-xs text-gray-500 mb-1">
+                Markeer secties met <code>[Verse]</code>, <code>[Chorus]</code>, <code>[Solo]</code>,
+                <code>[Bridge]</code>. Akkoorden mogen boven de tekst staan of inline als
+                <code>[Em]tekst</code>.
+              </p>
+              <textarea id="fBulk" rows="8" class="w-full border border-gray-300 rounded-lg px-3 py-2 editor-line-mono text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="[Verse]
+[Em]Tien tegen een dat ik mijn [A]mond houd"></textarea>
+              <button type="button" id="bulkToSections" class="mt-2 text-sm px-3 py-1.5 rounded-lg bg-gray-200 hover:bg-gray-300">
+                In secties zetten
+              </button>
+            </div>
+          </div>
+        </details>
+
+        <!-- Gestructureerde secties -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-sm font-medium">Secties</label>
+            <div class="flex items-center gap-2">
+              <select id="newSectionType" class="text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="verse">Couplet</option>
+                <option value="chorus">Refrein</option>
+                <option value="solo">Solo</option>
+                <option value="bridge">Bridge</option>
+                <option value="intro">Intro</option>
+                <option value="outro">Outro</option>
+                <option value="interlude">Tussenspel</option>
+                <option value="pre-chorus">Pre-refrein</option>
+              </select>
+              <button type="button" id="addSectionBtn" class="text-sm px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+                + Sectie toevoegen
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <label class="text-sm font-medium whitespace-nowrap" for="transposeSlider">Transponeren</label>
+            <input id="transposeSlider" type="range" min="-8" max="8" step="1" value="0" class="flex-1 accent-blue-600">
+            <span id="transposeValue" class="text-sm font-semibold w-8 text-center">0</span>
+          </div>
+
+          <div id="sectionsList" class="space-y-3"></div>
+          <p id="sectionsEmpty" class="hidden text-sm text-gray-400 py-4 text-center">
+            Nog geen secties. Voeg er een toe of importeer een PDF/tekst.
+          </p>
+
+          <div class="mt-4">
+            <div class="text-xs font-medium text-gray-500 mb-1">Voorbeeld (live)</div>
+            <div id="editorPreview" class="song-body border border-gray-200 rounded-lg p-3 bg-gray-50 min-h-[8rem] max-h-[32rem] overflow-auto">
+              <p class="text-gray-400 text-sm">Nog geen inhoud…</p>
+            </div>
+          </div>
+        </div>
+
+        <p id="editorError" class="text-sm text-red-600 hidden"></p>
+      </form>
+    </section>
+
+    <!-- ==================================================================
+         VIEW: Instellingen
+         ================================================================== -->
+    <section id="view-settings" class="view">
+      <h1 class="text-2xl font-bold mb-5">Instellingen</h1>
+
+      <div class="bg-white rounded-2xl shadow p-5 space-y-6">
+        <!-- Persoonlijk instrument -->
+        <div class="flex items-center gap-3 pb-4 border-b border-gray-200">
+          <label for="myInstrument" class="text-sm font-medium text-gray-700 whitespace-nowrap">🎸 Ik speel:</label>
+          <select id="myInstrument" class="border border-gray-300 rounded-lg px-2 py-1.5 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="general">Algemeen</option>
+            <option value="drums">Drums</option>
+            <option value="guitar">Gitaar 1</option>
+            <option value="guitar2">Gitaar 2</option>
+            <option value="guitar3">Gitaar 3</option>
+            <option value="bass">Bas</option>
+            <option value="keys">Toetsen</option>
+            <option value="vocals">Zang</option>
+          </select>
+          <span id="myInstrumentSaved" class="text-xs text-green-600 hidden">opgeslagen ✓</span>
+        </div>
+
+        <!-- Keuze: modus leespagina -->
+        <fieldset class="border-b border-gray-200 pb-4">
+          <legend class="font-medium mb-3">📖 Modus leespagina</legend>
+          <div class="space-y-2">
+            <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <input type="radio" name="readingMode" value="footswitch" class="w-4 h-4 text-blue-600">
+              <div>
+                <p class="font-medium text-sm">🦶 Voetpedaal</p>
+                <p class="text-xs text-gray-500">Scroll met PageUp/Down, pijltjestoetsen of spatiebalk</p>
+              </div>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <input type="radio" name="readingMode" value="autoscroll" class="w-4 h-4 text-blue-600">
+              <div>
+                <p class="font-medium text-sm">⏱ Autoscroll</p>
+                <p class="text-xs text-gray-500">Scrollt automatisch op basis van BPM</p>
+              </div>
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- Toggle: Tekenmodus -->
+        <div>
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" id="settingsDrawMode" class="w-5 h-5 rounded border-gray-300">
+            <div>
+              <p class="font-medium">Handgeschreven Aantekeningen (Canvas)</p>
+              <p class="text-sm text-gray-500">Teken rechtstreeks op het liedje met je vinger of stylus. Highlight/noteer met kleuren.</p>
+            </div>
+          </label>
+        </div>
+
+        <!-- Toggle: Ik ben aan het repeteren -->
+        <div class="pt-4 border-t border-gray-200">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" id="settingsRehearsing" class="w-5 h-5 rounded border-gray-300">
+            <div>
+              <p class="font-medium">🎯 Ik ben aan het repeteren</p>
+              <p class="text-sm text-gray-500">Ontvang de 'liedje om te oefenen'-keuze wanneer iemand die maakt.</p>
+            </div>
+          </label>
+        </div>
+
+        <!-- Knop naar takenlijst -->
+        <div class="pt-4 border-t border-gray-200">
+          <button id="openTodoBtn" class="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+            <span class="text-xl">📋</span>
+            <div class="text-left">
+              <p class="font-medium">Takenlijst</p>
+              <p class="text-sm text-gray-500">Beheer je to-do's voor de band</p>
+            </div>
+            <span class="ml-auto text-gray-300">›</span>
+          </button>
+        </div>
+
+        <!-- Knop naar akkoordenbeheer -->
+        <div class="pt-4 border-t border-gray-200">
+          <button id="openChordsBtn" class="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+            <span class="text-xl">🎸</span>
+            <div class="text-left">
+              <p class="font-medium">Akkoorden beheren</p>
+              <p class="text-sm text-gray-500">Beheer de gitaargrepen-database voor klikbare akkoorden</p>
+            </div>
+            <span class="ml-auto text-gray-300">›</span>
+          </button>
+        </div>
+
+        <!-- Knop naar liedje-kiezer -->
+        <div class="pt-4 border-t border-gray-200">
+          <button id="openPracticeBtn" class="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+            <span class="text-xl">🎲</span>
+            <div class="text-left">
+              <p class="font-medium">Liedje kiezen om te oefenen</p>
+              <p class="text-sm text-gray-500">Laat de band willekeurig een liedje kiezen</p>
+            </div>
+            <span class="ml-auto text-gray-300">›</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW: Liedje kiezen (roulette)
+         ================================================================== -->
+    <section id="view-practice" class="view">
+      <h1 class="text-2xl font-bold mb-1">🎲 Liedje kiezen</h1>
+      <p class="text-gray-500 mb-5">Kies willekeurig een liedje om met de band te oefenen.</p>
+
+      <div class="bg-white rounded-2xl shadow p-6 text-center">
+        <!-- Roulette-venster: hier rollen de titels voorbij -->
+        <div id="practiceReel" class="practice-reel">
+          <div id="practiceReelInner" class="practice-reel-inner">
+            <div class="practice-tile practice-tile-idle">🎲 Druk op de knop</div>
+          </div>
+        </div>
+
+        <button id="practicePickBtn" type="button" class="mt-6 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-lg rounded-xl px-8 py-3">
+          🎲 Kies een liedje
+        </button>
+
+        <!-- Resultaat na het kiezen -->
+        <div id="practiceResult" class="hidden mt-6">
+          <p class="text-xs uppercase tracking-widest text-gray-400">Gekozen liedje</p>
+          <p id="practiceResultTitle" class="text-2xl font-bold mt-1"></p>
+          <p id="practiceResultArtist" class="text-gray-500"></p>
+          <button id="practiceResultOpenBtn" type="button" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-5 py-2">
+            Bekijk liedje
+          </button>
+          <p id="practiceResultNote" class="text-sm text-green-600 mt-3"></p>
+        </div>
+
+        <!-- Wie is online / ontvangt de keuze -->
+        <div id="practiceMembers" class="mt-6 border-t border-gray-200 pt-4 text-left">
+          <p class="text-sm font-medium text-gray-600 mb-1">📡 Bandleden online</p>
+          <p class="text-xs text-gray-400 mb-2">Vink "verplicht" aan bij de leden die mee moeten doen aan het kiezen.</p>
+          <div id="practiceMembersList" class="space-y-1"></div>
+          <p id="practiceRequiredHint" class="hidden text-sm text-amber-600 mt-2"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW: Todo / Takenlijst
+         ================================================================== -->
+    <section id="view-todo" class="view">
+      <div class="flex items-center justify-between mb-5">
+        <h1 class="text-2xl font-bold">📋 Takenlijst</h1>
+        <button id="todoNewSongBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2">
+          + Nieuw liedje
+        </button>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-5 space-y-4">
+        <!-- Invoerveld -->
+        <form id="todoForm" class="flex gap-2">
+          <input id="todoInput" type="text" placeholder="Wat moet er gebeuren?" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2 whitespace-nowrap">
+            Toevoegen
+          </button>
+        </form>
+
+        <!-- Filterknoppen + teller -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div id="todoCounter" class="text-sm text-gray-500">Nog 6 taken open</div>
+          <div class="flex gap-1">
+            <button data-filter="all" class="todo-filter-btn px-3 py-1 text-sm rounded-lg border border-gray-300 bg-blue-600 text-white">Alle</button>
+            <button data-filter="active" class="todo-filter-btn px-3 py-1 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">Actief</button>
+            <button data-filter="completed" class="todo-filter-btn px-3 py-1 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">Voltooid</button>
+          </div>
+        </div>
+
+        <!-- Lijst -->
+        <ul id="todoList" class="space-y-1"><li class="todo-item flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 transition group"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer shrink-0"><span class="flex-1 text-sm text-gray-800">Brown eyed girl</span><button type="button" class="shrink-0 w-7 h-7 flex items-center justify-center rounded text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition" title="Verwijderen">✕</button></li><li class="todo-item flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 transition group"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer shrink-0"><span class="flex-1 text-sm text-gray-800">Okie from Muskogee</span><button type="button" class="shrink-0 w-7 h-7 flex items-center justify-center rounded text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition" title="Verwijderen">✕</button></li><li class="todo-item flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 transition group"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer shrink-0"><span class="flex-1 text-sm text-gray-800">Heaven Knows - The pretty reckless</span><button type="button" class="shrink-0 w-7 h-7 flex items-center justify-center rounded text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition" title="Verwijderen">✕</button></li><li class="todo-item flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 transition group"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer shrink-0"><span class="flex-1 text-sm text-gray-800">Valerie amy</span><button type="button" class="shrink-0 w-7 h-7 flex items-center justify-center rounded text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition" title="Verwijderen">✕</button></li><li class="todo-item flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 transition group"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer shrink-0"><span class="flex-1 text-sm line-through text-gray-400">knopje terug</span><button type="button" class="shrink-0 w-7 h-7 flex items-center justify-center rounded text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition" title="Verwijderen">✕</button></li><li class="todo-item flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 transition group"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer shrink-0"><span class="flex-1 text-sm line-through text-gray-400">transponeren</span><button type="button" class="shrink-0 w-7 h-7 flex items-center justify-center rounded text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition" title="Verwijderen">✕</button></li><li class="todo-item flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 transition group"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer shrink-0"><span class="flex-1 text-sm line-through text-gray-400">aanpassen wijzigingen</span><button type="button" class="shrink-0 w-7 h-7 flex items-center justify-center rounded text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition" title="Verwijderen">✕</button></li><li class="todo-item flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 transition group"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer shrink-0"><span class="flex-1 text-sm text-gray-800">Eerste paar seconden van liedje laten luisteren</span><button type="button" class="shrink-0 w-7 h-7 flex items-center justify-center rounded text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition" title="Verwijderen">✕</button></li><li class="todo-item flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 transition group"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer shrink-0"><span class="flex-1 text-sm text-gray-800">Scrolltempo aanpassen aan spel</span><button type="button" class="shrink-0 w-7 h-7 flex items-center justify-center rounded text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition" title="Verwijderen">✕</button></li></ul>
+        <p id="todoEmpty" class="hidden text-gray-400 text-center py-6">Geen taken gevonden.</p>
+
+        <!-- Opruimen -->
+        <div id="todoFooter" class="pt-3 border-t border-gray-200">
+          <button id="clearCompletedBtn" class="text-sm text-red-500 hover:text-red-700 hover:underline">
+            Voltooide taken verwijderen
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW: Setlist Manager
+         ================================================================== -->
+    <section id="view-setlist" class="view">
+      <div class="flex items-center justify-between gap-3 mb-5">
+        <h1 class="text-2xl font-bold">Setlist Planner</h1>
+        <div class="flex items-center gap-2">
+          <span id="setlistDirty" class="hidden text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">niet opgeslagen</span>
+          <span id="setlistSaved" class="hidden text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">opgeslagen ✓</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Linkerkolom: Alle Liedjes (Hoofdbank) -->
+        <div class="bg-white rounded-2xl shadow p-5">
+          <h2 class="text-lg font-semibold mb-3">Beschikbare Liedjes</h2>
+          <input id="songBankSearch" type="search" placeholder="Zoek een liedje…" class="w-full mb-3 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <p class="text-xs text-gray-400 mb-2">Tik op een liedje om het toe te voegen (of sleep het naar rechts).</p>
+          <div id="songBank" class="space-y-2 max-h-[60vh] overflow-y-auto">
+            <!-- Dynamisch ingevuld met alle liedjes -->
+          </div>
+        </div>
+
+        <!-- Rechterkolom: Setlist Planner -->
+        <div class="space-y-4">
+          <!-- Setlist selector en nieuw -->
+          <div class="bg-white rounded-2xl shadow p-5">
+            <h2 class="text-lg font-semibold mb-3">Setlist</h2>
+            <div class="space-y-3">
+              <select id="setlistSelect" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                <option value="">-- Selecteer een setlist --</option>
+              </select>
+              <div class="flex gap-2">
+                <button type="button" id="newSetlistBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2 text-sm">
+                  + Nieuwe Setlist
+                </button>
+                <button type="button" id="deleteSetlistBtn" class="bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-lg px-4 py-2 text-sm border border-red-200">
+                  Verwijderen
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Setlist dropzone -->
+          <div id="setlistDropzone" class="bg-blue-50 rounded-2xl shadow p-5 min-h-[60vh] border-2 border-dashed border-blue-300">
+            <h2 class="text-lg font-semibold mb-4 text-gray-700">Setlist Volgorde</h2>
+            <div id="setlistSongs" class="space-y-2">
+              <!-- Dynamisch ingevuld met geselecteerde liedjes -->
+              <p class="text-gray-400 text-sm italic">Selecteer of maak een setlist om te beginnen.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Nieuwe Setlist -->
+      <div id="newSetlistModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-lg p-6 max-w-md w-full mx-4">
+          <h3 class="text-lg font-semibold mb-4">Nieuwe Setlist Aanmaken</h3>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium mb-1" for="newSetlistName">Naam (bijv. Dorpsfeest 2026)</label>
+              <input id="newSetlistName" type="text" placeholder="Naam van de setlist" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="newSetlistDate">Datum</label>
+              <input id="newSetlistDate" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div class="flex gap-2 pt-3">
+              <button type="button" id="createSetlistBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2">
+                Aanmaken
+              </button>
+              <button type="button" id="cancelNewSetlistBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg px-4 py-2">
+                Annuleren
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW: Akkoordenbeheer
+         ================================================================== -->
+    <section id="view-chords" class="view">
+      <h1 class="text-2xl font-bold mb-5">🎸 Akkoorden beheren</h1>
+
+      <!-- Nieuw akkoord formulier -->
+      <div class="bg-white rounded-2xl shadow p-5 mb-4">
+        <h2 class="font-semibold mb-3" id="chordFormTitle">Nieuw akkoord toevoegen</h2>
+        <form id="chordForm" class="space-y-3">
+          <input type="hidden" id="chordEditId">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1" for="fChordName">Naam</label>
+              <input id="fChordName" required="" placeholder="Am" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1" for="fBaseFret">Startfret</label>
+              <input id="fBaseFret" type="number" min="1" value="1" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs font-medium text-gray-500 mb-1">Greep (E A D G B e)</label>
+              <div class="flex gap-1">
+                <input id="fFret0" type="number" min="-1" value="-1" placeholder="E" title="E-snaar" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input id="fFret1" type="number" min="-1" value="0" placeholder="A" title="A-snaar" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input id="fFret2" type="number" min="-1" value="2" placeholder="D" title="D-snaar" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input id="fFret3" type="number" min="-1" value="2" placeholder="G" title="G-snaar" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input id="fFret4" type="number" min="-1" value="1" placeholder="B" title="B-snaar" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input id="fFret5" type="number" min="-1" value="0" placeholder="e" title="hoge e-snaar" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Vingerzetting (0=geen, 1..4)</label>
+            <div class="flex gap-1">
+              <input id="fFinger0" type="number" min="0" max="4" value="0" title="E" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <input id="fFinger1" type="number" min="0" max="4" value="0" title="A" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <input id="fFinger2" type="number" min="0" max="4" value="2" title="D" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <input id="fFinger3" type="number" min="0" max="4" value="3" title="G" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <input id="fFinger4" type="number" min="0" max="4" value="1" title="B" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <input id="fFinger5" type="number" min="0" max="4" value="0" title="e" class="chord-fret-input w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button type="submit" id="chordSaveBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2 text-sm">
+              Opslaan
+            </button>
+            <button type="button" id="chordCancelBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg px-4 py-2 text-sm hidden">
+              Annuleren
+            </button>
+            <div id="chordPreviewSvg" class="ml-auto hidden sm:flex items-center"></div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Live preview op mobiel -->
+      <div id="chordPreviewMobile" class="hidden bg-[#1e1e24] rounded-2xl shadow p-4 mb-4 flex justify-center"></div>
+
+      <!-- Zoeken + seed -->
+      <div class="flex gap-2 mb-4">
+        <input id="chordSearch" type="search" placeholder="Zoek akkoord…" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        <button id="seedChordsFromUi" type="button" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-medium rounded-lg px-4 py-2 text-sm border border-amber-300 whitespace-nowrap">
+          🌱 Seed voorbeelden
+        </button>
+      </div>
+
+      <!-- Akkoordenlijst -->
+      <div id="chordsList" class="space-y-2">
+        <p class="text-gray-400 text-sm italic">Laden…</p>
+      </div>
+      <p id="chordsEmpty" class="hidden text-gray-500 text-center py-10">
+        Geen akkoorden gevonden. Voeg er een toe of gebruik "Seed voorbeelden".
+      </p>
+    </section>
+
+    <!-- ==================================================================
+         Chord Modal — gitaargreep popup (Chordify-stijl, donker thema)
+         ================================================================== -->
+    <div id="chordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+      <!-- Donkere overlay (klik erop = sluiten) -->
+      <div id="chordModalOverlay" class="absolute inset-0 bg-black bg-opacity-70"></div>
+      <!-- Modal body -->
+      <div id="chordModalBody" class="relative z-10 bg-[#1e1e24] rounded-2xl shadow-2xl p-5 mx-4 max-w-[260px] w-full">
+        <!-- Sluitknop -->
+        <button id="chordModalClose" class="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition" title="Sluiten">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <!-- SVG container -->
+        <div id="chordModalSvg" class="flex justify-center"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ======================================================================
+       Globale melding: "liedje om te oefenen" (verschijnt overal in de app)
+       ====================================================================== -->
+  <div id="practiceToast" class="hidden fixed inset-0 z-[70] flex items-center justify-center">
+    <div id="practiceToastOverlay" class="absolute inset-0 bg-black bg-opacity-60"></div>
+    <div class="relative z-10 bg-white rounded-2xl shadow-2xl p-6 mx-4 max-w-md w-full text-center practice-toast-body">
+      <p class="text-xs uppercase tracking-widest text-gray-400 mb-3">🎵 Liedje om te oefenen</p>
+      <div id="practiceToastReel" class="practice-reel">
+        <div id="practiceToastReelInner" class="practice-reel-inner">
+          <div class="practice-tile practice-tile-idle">🎵</div>
+        </div>
+      </div>
+      <div id="practiceToastInfo" class="hidden mt-4">
+        <p id="practiceToastTitle" class="text-2xl font-bold"></p>
+        <p id="practiceToastArtist" class="text-gray-500"></p>
+        <p id="practiceToastBy" class="text-xs text-gray-400 mt-2"></p>
+      </div>
+      <div id="practiceToastActions" class="hidden flex gap-2 mt-5">
+        <button id="practiceToastOpenBtn" type="button" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2">Bekijk liedje</button>
+        <button id="practiceToastCloseBtn" type="button" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg px-4 py-2">Sluiten</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App-logica als ES-module -->
+  <script type="module" src="js/app.js"></script>
+</html>

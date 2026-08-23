@@ -1,0 +1,22 @@
+# Firebase CLI cache
+.firebase/
+
+# Browser-opgeslagen voorbeeldpagina's (alleen lokaal als referentie)
+Kolonel & The Parkers - Songbeheer*.html
+Kolonel & The Parkers - Songbeheer*_files/
+
+# Firebase-config met projectgegevens (lokaal houden; zie firebase-config.example.js)
+js/firebase-config.js
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Besturingssysteem
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+firebase-debug.log

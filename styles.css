@@ -1,0 +1,563 @@
+/* ==========================================================================
+   Band Admin - custom styles
+   Tailwind (via CDN) verzorgt de basis-styling; hier staan de dingen die
+   Tailwind niet (goed) kan: de monospace akkoord-rendering en wat animaties.
+   ========================================================================== */
+
+:root {
+  --chord-color: #2563eb; /* blauw voor akkoorden */
+}
+
+/* Voorkom dat mobiele browsers de tekst automatisch vergroten ("font boosting"),
+   want dat negeert de lettergrootte die de auto-fit per sectie instelt. */
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Song rendering: akkoorden exact boven de tekst.
+   We gebruiken een monospace font zodat elke kolom even breed is; de akkoord-
+   regel en tekstregel worden dan karakter-voor-karakter uitgelijnd.
+   -------------------------------------------------------------------------- */
+.song-body {
+  font-family: "Roboto Mono", "Courier New", Courier, monospace;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.song-line {
+  margin-bottom: 0.35rem;
+  white-space: pre; /* niet afbreken: akkoorden blijven boven de juiste letter */
+  overflow-x: hidden; /* geen schuifbalk; de per-sectie auto-fit maakt het passend */
+}
+
+.song-line .chords {
+  color: var(--chord-color);
+  font-weight: 700;
+  min-height: 1.35em; /* houd ruimte, ook bij regels zonder akkoorden */
+  white-space: pre;
+}
+
+.song-line .lyrics {
+  color: #111827;
+  white-space: pre;
+}
+
+/* --------------------------------------------------------------------------
+   Secties: elk type krijgt een eigen kleur, een gekleurde balk links en een
+   badge-label, zodat couplet/refrein/solo/etc. direct van elkaar te onder-
+   scheiden zijn.
+   -------------------------------------------------------------------------- */
+.song-section {
+  margin: 0 0 1.1rem;
+  padding: 0.55rem 0.85rem 0.65rem;
+  border-left: 5px solid #94a3b8;
+  border-radius: 0 0.6rem 0.6rem 0;
+  background: #f8fafc;
+}
+.song-section:last-child {
+  margin-bottom: 0;
+}
+
+.song-section .section-header {
+  display: inline-block;
+  font-family: system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.14rem 0.6rem;
+  border-radius: 999px;
+  margin-bottom: 0.55rem;
+  color: #fff;
+  background: #64748b;
+}
+
+/* Kleuren per sectietype */
+.sec-verse       { border-left-color: #94a3b8; background: #f8fafc; }
+.sec-verse       .section-header { background: #64748b; }
+
+.sec-chorus      { border-left-color: #2563eb; background: #eff6ff; }
+.sec-chorus      .section-header { background: #2563eb; }
+
+.sec-solo        { border-left-color: #f59e0b; background: #fffbeb; }
+.sec-solo        .section-header { background: #f59e0b; }
+
+.sec-bridge      { border-left-color: #9333ea; background: #faf5ff; }
+.sec-bridge      .section-header { background: #9333ea; }
+
+.sec-intro,
+.sec-outro       { border-left-color: #0d9488; background: #f0fdfa; }
+.sec-intro       .section-header,
+.sec-outro       .section-header { background: #0d9488; }
+
+.sec-interlude   { border-left-color: #16a34a; background: #f0fdf4; }
+.sec-interlude   .section-header { background: #16a34a; }
+
+.sec-pre-chorus  { border-left-color: #4f46e5; background: #eef2ff; }
+.sec-pre-chorus  .section-header { background: #4f46e5; }
+
+/* Oud losstaand label (fallback, niet meer primair gebruikt) */
+.section-label {
+  font-family: system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6b7280;
+  margin: 1.1rem 0 0.4rem;
+}
+
+/* --------------------------------------------------------------------------
+   Voetschakelaar / pageturner modus
+   -------------------------------------------------------------------------- */
+/* (Voetschakelaar-modus heeft geen rand meer; de knop in de balk toont de status.) */
+
+/* Actieve voetschakelaar-knop in de topbar */
+.footswitch-btn-on {
+  background-color: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+.footswitch-btn-on:hover {
+  background-color: #15803d;
+}
+
+.pulse-dot {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* --------------------------------------------------------------------------
+   Views: alleen de actieve view is zichtbaar (simpele SPA-router)
+   -------------------------------------------------------------------------- */
+.view {
+  display: none;
+}
+.view.active {
+  display: block;
+}
+
+/* Kleine helper voor de instrument-tabs */
+.tab-active {
+  background-color: #2563eb;
+  color: #fff;
+}
+
+/* Chord-editor helper in de song editor */
+.editor-line-mono {
+  font-family: "Roboto Mono", "Courier New", monospace;
+}
+
+/* --------------------------------------------------------------------------
+   Sectiekaarten in de editor
+   -------------------------------------------------------------------------- */
+.section-card {
+  border: 1px solid #e5e7eb;
+  border-left: 5px solid #94a3b8;
+  border-radius: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  background: #fff;
+}
+.section-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.section-card .sc-type {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.section-card .sc-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+.section-card .sc-actions button {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0.4rem;
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.section-card .sc-actions button:hover {
+  background: #f3f4f6;
+}
+.section-card .sc-del:hover {
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+.section-card .sc-lines {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.85rem;
+  resize: none;
+  overflow-y: hidden;
+  min-height: 6rem;
+}
+
+/* --------------------------------------------------------------------------
+   Opmerkingen onder een sectie (in de Song View)
+   -------------------------------------------------------------------------- */
+.section-notes {
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px dashed #d1d5db;
+  font-family: system-ui, sans-serif;
+}
+.section-notes .sn-item {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  margin-bottom: 0.4rem;
+}
+.section-note-form {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.section-note-form .sn-instrument {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.8rem;
+  background: #fff;
+}
+.section-note-form .sn-text {
+  flex: 1;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.85rem;
+}
+.section-note-form button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: #2563eb;
+  color: #fff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.section-note-form button:hover {
+  background: #1d4ed8;
+}
+
+/* --------------------------------------------------------------------------
+   Opmerkingen per regel
+   -------------------------------------------------------------------------- */
+.line-block {
+  margin-bottom: 0.15rem;
+}
+.line-row {
+  position: relative;
+  padding-right: 1.75rem; /* ruimte voor het '+'-knopje rechts */
+}
+.line-add {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.4rem;
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 700;
+  color: #2563eb;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  opacity: 0.25;
+  transition: opacity 0.15s, background 0.15s;
+}
+.line-row:hover .line-add {
+  opacity: 0.7;
+}
+.line-add:hover {
+  opacity: 1 !important;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+.line-notes {
+  font-family: system-ui, sans-serif;
+  margin: 0.1rem 0 0.35rem 1rem;
+}
+.line-notes .sn-item {
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.line-note-form {
+  margin: 0.15rem 0 0.4rem 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   Handgeschreven tekenlaag (canvas-overlay over de songtekst)
+   -------------------------------------------------------------------------- */
+#drawCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  pointer-events: none; /* standaard uit: scrollen/klikken werkt gewoon */
+  touch-action: auto;
+}
+/* In tekenmodus vangt het canvas de pen/vinger op en wordt scrollen geblokkeerd. */
+#songCard.drawing #drawCanvas {
+  pointer-events: auto;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* Zwevende teken-werkbalk rechtsonder */
+#drawToolbar {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+#view-song:not(.active) #drawToolbar {
+  display: none;
+}
+#drawToolbar button {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  font-size: 1.25rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+#drawToolbar button:active {
+  transform: scale(0.94);
+}
+/* Gereedschapsknoppen (gum, potlood, arceerstift) */
+#drawToolbar .draw-tool {
+  position: relative;
+}
+/* Het actieve gereedschap krijgt een duidelijke ring */
+#drawToolbar .draw-tool.selected {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+  background: #eff6ff;
+}
+
+/* --------------------------------------------------------------------------
+   Zwevende scroll-knop linksonder in de song-view
+   -------------------------------------------------------------------------- */
+#scrollDownBtn {
+  position: fixed;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 30;
+  width: 6.5rem;
+  height: 6.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 3.2rem;
+  line-height: 1;
+  border: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, opacity 0.15s;
+  opacity: 0.5;
+}
+#scrollDownBtn:hover {
+  background: #1d4ed8;
+}
+#scrollDownBtn:active {
+  transform: scale(0.94);
+}
+/* Alleen tonen wanneer de song-view actief is (zie .view logica). */
+#view-song:not(.active) #scrollDownBtn {
+  display: none;
+}
+
+/* Live-modus: knop verandert in een "volgend nummer"-balk aan het einde. */
+#scrollDownBtn.next-armed {
+  width: auto;
+  max-width: min(82vw, 22rem);
+  height: auto;
+  min-height: 4rem;
+  padding: 0.6rem 1.15rem;
+  gap: 0.65rem;
+  border-radius: 1.25rem;
+  background: #16a34a;
+  opacity: 1;
+  font-size: 1rem;
+  justify-content: flex-start;
+  text-align: left;
+  animation: nextPulse 1.5s ease-in-out infinite;
+}
+#scrollDownBtn.next-armed:hover {
+  background: #15803d;
+}
+#scrollDownBtn .next-icon {
+  font-size: 1.9rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+#scrollDownBtn .next-label {
+  line-height: 1.15;
+  font-size: 0.95rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#scrollDownBtn .next-label b {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+@keyframes nextPulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4); }
+  50% { box-shadow: 0 4px 22px rgba(22, 163, 74, 0.85); }
+}
+
+/* '+'-knop rechtsboven in de sectie-header (opmerking per sectie) */
+.section-add {
+  flex-shrink: 0;
+  width: 1.7rem;
+  height: 1.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.4rem;
+  font-size: 1.15rem;
+  line-height: 1;
+  font-weight: 700;
+  color: #2563eb;
+  background: #fff;
+  border: 1px solid #bfdbfe;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.section-add:hover {
+  background: #eff6ff;
+}
+
+/* --------------------------------------------------------------------------
+   Klikbare akkoorden (Chordify-stijl gitaargrepen)
+   -------------------------------------------------------------------------- */
+.chord-clickable {
+  cursor: pointer;
+  transition: color 0.15s, text-decoration-color 0.15s;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+}
+.chord-clickable:hover,
+.chord-clickable:active {
+  color: #1d4ed8;
+  text-decoration-color: #93c5fd;
+}
+
+/* Chord Modal animatie */
+#chordModal {
+  animation: chordModalIn 0.2s ease-out;
+}
+@keyframes chordModalIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Chord Modal body lichte verhoging */
+#chordModalBody {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+/* --------------------------------------------------------------------------
+   Todo / Takenlijst
+   -------------------------------------------------------------------------- */
+.todo-item {
+  animation: todoIn 0.2s ease-out;
+}
+@keyframes todoIn {
+  from { opacity: 0; transform: translateY(-0.4rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --------------------------------------------------------------------------
+   Akkoordenbeheer
+   -------------------------------------------------------------------------- */
+.chord-fret-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.chord-fret-input::-webkit-outer-spin-button,
+.chord-fret-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Liedje-kiezer (roulette)
+   -------------------------------------------------------------------------- */
+.practice-reel {
+  height: 7rem;
+  max-width: 30rem;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  background: #f8fafc;
+}
+.practice-reel-inner {
+  will-change: transform;
+}
+.practice-tile {
+  height: 7rem;
+  line-height: 7rem;
+  text-align: center;
+  padding: 0 1.25rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.practice-tile-idle {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   Globale "liedje om te oefenen"-melding
+   -------------------------------------------------------------------------- */
+.practice-toast-body {
+  animation: practiceToastIn 0.28s ease-out;
+}
+@keyframes practiceToastIn {
+  from { opacity: 0; transform: translateY(1rem) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}

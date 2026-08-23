@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "band-admin-76dad"
+  },
+  "targets": {
+    "band-admin-76dad": {
+      "hosting": {
+        "test": [
+          "band-admin-76dad-9c068"
+        ]
+      }
+    }
+  }
+}

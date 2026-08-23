@@ -1,0 +1,17 @@
+{
+  "hosting": [
+    {
+      "target": "test",
+      "public": ".",
+      "ignore": [
+        "firebase.json",
+        ".firebaserc",
+        "README.md",
+        "**/.*",
+        "**/node_modules/**",
+        "Kolonel & The Parkers - Songbeheer*.html",
+        "Kolonel & The Parkers - Songbeheer*_files/**"
+      ]
+    }
+  ]
+}
