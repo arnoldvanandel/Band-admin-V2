@@ -16,6 +16,23 @@
         "Kolonel & The Parkers - Songbeheer*.html",
         "Kolonel & The Parkers - Songbeheer*_files/**"
       ]
+    },
+    {
+      "target": "live",
+      "public": ".",
+      "ignore": [
+        "firebase.json",
+        ".firebaserc",
+        "README.md",
+        ".git",
+        ".git/**",
+        ".firebase",
+        ".firebase/**",
+        "**/.*",
+        "**/node_modules/**",
+        "Kolonel & The Parkers - Songbeheer*.html",
+        "Kolonel & The Parkers - Songbeheer*_files/**"
+      ]
     }
   ]
 }

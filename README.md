@@ -72,7 +72,10 @@ Deploy naar de testsite:
 npx --yes firebase-tools@latest deploy --only hosting:test
 ```
 
-De live site (`band-admin-76dad.web.app`) staat **niet** in deze `firebase.json`
-en wordt dus nooit geraakt vanuit deze map. Wil je later wél naar live deployen,
-voeg dan in `.firebaserc` een tweede target toe (bijv. `live`) en in `firebase.json`
-een tweede hosting-config, en deploy met `--only hosting:live`.
+Deploy naar de live site:
+```
+npx --yes firebase-tools@latest deploy --only hosting:live
+```
+
+Let op: een kale `firebase deploy` (zonder `--only`) deployt naar **beide** sites.
+Gebruik dus altijd `--only hosting:test` of `--only hosting:live`.

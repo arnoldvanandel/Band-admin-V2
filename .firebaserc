@@ -7,6 +7,9 @@
       "hosting": {
         "test": [
           "band-admin-76dad-9c068"
+        ],
+        "live": [
+          "band-admin-76dad"
         ]
       }
     }
