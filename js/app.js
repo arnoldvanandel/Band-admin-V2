@@ -2743,12 +2743,14 @@ function readChordForm() {
   const frets = [];
   const fingers = [];
   for (let i = 0; i < 6; i++) {
-    frets.push(parseInt(document.getElementById(`fFret${i}`)?.value) || -1);
+    const fretVal = parseInt(document.getElementById(`fFret${i}`)?.value);
+    frets.push(Number.isNaN(fretVal) ? -1 : fretVal);
     fingers.push(parseInt(document.getElementById(`fFinger${i}`)?.value) || 0);
   }
+  const baseFretVal = parseInt($("#fBaseFret").value);
   return {
     chordName: $("#fChordName").value.trim(),
-    baseFret: parseInt($("#fBaseFret").value) || 1,
+    baseFret: Number.isNaN(baseFretVal) ? 1 : baseFretVal,
     frets,
     fingers,
   };
@@ -2759,7 +2761,7 @@ function fillChordForm(chordData) {
   $("#chordEditId").value = chordData.id || chordData.chordName;
   $("#chordFormTitle").textContent = `Akkoord bewerken: ${chordData.chordName}`;
   $("#fChordName").value = chordData.chordName || "";
-  $("#fBaseFret").value = chordData.baseFret || 1;
+  $("#fBaseFret").value = chordData.baseFret != null ? chordData.baseFret : 1;
   const frets = chordData.frets || [-1, -1, -1, -1, -1, -1];
   const fingers = chordData.fingers || [0, 0, 0, 0, 0, 0];
   for (let i = 0; i < 6; i++) {
