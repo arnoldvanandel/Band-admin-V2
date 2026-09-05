@@ -583,17 +583,28 @@ html {
 #topInstrumentBtn {
   position: relative;
 }
-#topInstrumentBtn img {
+.gitaar-icoon {
   display: block;
   position: relative;
   z-index: 1;
-  transition: transform 0.18s ease;
 }
-#topInstrumentBtn:hover img {
-  transform: scale(1.12);
+.gitaar-icoon--hover {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  z-index: 2;
+  pointer-events: none;
+}
+/* Hover: blauwe snaren/accenten in beeld (spec: standaard → hover). */
+#topInstrumentBtn:hover .gitaar-icoon--hover,
+#topInstrumentBtn.instrument-active .gitaar-icoon--hover {
+  opacity: 1;
 }
 
-/* zachte lichtblauwe gloed achter het icoon */
+/* zachte lichtblauwe schijf achter het icoon (spec: "Gekozen") */
 #topInstrumentBtn::before {
   content: "";
   position: absolute;
@@ -604,8 +615,8 @@ html {
   transform: translate(-50%, -50%) scale(0.8);
   border-radius: 9999px;
   background: radial-gradient(circle,
-    rgba(96, 165, 250, 0.35) 0%,
-    rgba(96, 165, 250, 0.12) 55%,
+    rgba(191, 211, 245, 0.55) 0%,
+    rgba(191, 211, 245, 0.22) 55%,
     transparent 72%);
   opacity: 0;
   z-index: 0;
@@ -618,7 +629,7 @@ html {
   transform: translate(-50%, -50%) scale(1);
 }
 
-/* uitzettende rimpel, wordt door app.js getriggerd via .instrument-picked */
+/* dunne buitenste ring: ruststand na het kiezen (spec: "Gekozen (end)") */
 #topInstrumentBtn::after {
   content: "";
   position: absolute;
@@ -626,19 +637,66 @@ html {
   top: 50%;
   width: 36px;
   height: 36px;
-  transform: translate(-50%, -50%) scale(0.6);
+  transform: translate(-50%, -50%) scale(1.2);
   border-radius: 9999px;
-  border: 2px solid rgba(96, 165, 250, 0.55);
+  border: 1.5px solid rgba(199, 215, 245, 0.8);
   opacity: 0;
   z-index: 0;
   pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+#topInstrumentBtn.instrument-active::after {
+  opacity: 1;
+}
+
+/* Micro-animatie bij selecteren (spec: pop-in → pulse → settle) */
+#topInstrumentBtn.instrument-picked .gitaar-icoon--base {
+  animation: instrumentPop 0.7s ease-out;
 }
 #topInstrumentBtn.instrument-picked::after {
   animation: instrumentRipple 0.7s ease-out;
 }
+#topInstrumentBtn.instrument-picked .gitaar-sparks {
+  animation: instrumentSparks 0.7s ease-out;
+}
+
+@keyframes instrumentPop {
+  0%   { transform: scale(1) rotate(0deg); }
+  30%  { transform: scale(1.14) rotate(-4deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
 @keyframes instrumentRipple {
-  0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(0.6); }
+  0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(0.7); }
   70%  { opacity: 0.35; }
-  100% { opacity: 0;   transform: translate(-50%, -50%) scale(2.1); }
+  100% { opacity: 0;   transform: translate(-50%, -50%) scale(2.2); }
+}
+
+/* vonkjes bij de kop van de gitaar (spec: drie korte blauwe streepjes) */
+.gitaar-sparks {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+}
+.gitaar-sparks i {
+  position: absolute;
+  width: 2px;
+  height: 9px;
+  border-radius: 2px;
+  background: #60a5fa;
+  transform-origin: bottom center;
+}
+.gitaar-sparks i:nth-child(1) { transform: translate(7px, -16px) rotate(35deg); }
+.gitaar-sparks i:nth-child(2) { transform: translate(13px, -9px) rotate(75deg); }
+.gitaar-sparks i:nth-child(3) { transform: translate(11px, -18px) rotate(115deg); }
+@keyframes instrumentSparks {
+  0%   { opacity: 0; transform: scale(0.6); }
+  25%  { opacity: 1; transform: scale(1); }
+  55%  { opacity: 0.9; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.25); }
 }
 

@@ -5,7 +5,7 @@
 //  eigen offline-persistentie via IndexedDB.
 // ============================================================================
 
-const VERSION = "v49";
+const VERSION = "v50";
 const APP_SHELL_CACHE = `band-admin-shell-${VERSION}`;
 const RUNTIME_CACHE = `band-admin-runtime-${VERSION}`;
 
@@ -29,6 +29,7 @@ const APP_SHELL = [
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/gitaar.png",
+  "/icons/gitaar-hover.png",
 ];
 
 // CDN-hosts die we bij runtime mogen cachen (Firebase SDK, Tailwind, fonts).

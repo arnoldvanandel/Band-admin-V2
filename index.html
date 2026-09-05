@@ -43,7 +43,9 @@
         <!-- Muzikant-kiezer als icoontje met dropdown -->
         <div class="relative">
           <button id="topInstrumentBtn" title="Kies muzikant/instrument" class="text-base px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
-            <img src="icons/gitaar.png" alt="Gitaar" class="h-7 w-7">
+            <img src="icons/gitaar.png" alt="Gitaar" class="h-7 w-7 gitaar-icoon gitaar-icoon--base">
+            <img src="icons/gitaar-hover.png" alt="" aria-hidden="true" class="h-7 w-7 gitaar-icoon gitaar-icoon--hover">
+            <span class="gitaar-sparks" aria-hidden="true"><i></i><i></i><i></i></span>
           </button>
           <div id="topInstrumentMenu" class="hidden absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30 min-w-[160px]">
             <button data-inst="all" class="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center gap-2">🎵 Alle muzikanten</button>
