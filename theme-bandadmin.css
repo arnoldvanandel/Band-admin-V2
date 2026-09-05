@@ -210,3 +210,45 @@ label { color: var(--ink) !important; }
 #netStatus { background: var(--live-bg) !important; color: var(--live-ink) !important; }
 #topInstrumentMenu { background: var(--surface) !important; border-color: var(--line-2) !important; }
 #userEmail { color: var(--ink-2) !important; }
+
+/* --- aanvullingen na test --- */
+
+/* Login-scherm blijft in de originele lichte kleuren, ook als het donkere
+   thema actief is. Alles hieronder is scoped op #view-login. */
+html:has(#view-login.active),
+body:has(#view-login.active) {
+  background: #f3f4f6 !important; /* originele lichtgrijze achtergrond */
+}
+#view-login .bg-white {
+  background: #ffffff !important;
+}
+#view-login h1 {
+  color: #111827 !important;
+}
+#view-login .text-gray-500 {
+  color: #6b7280 !important;
+}
+#view-login label {
+  color: #374151 !important;
+}
+#view-login input {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border-color: #d1d5db !important;
+}
+#view-login input::placeholder {
+  color: #9ca3af !important;
+}
+#view-login .bg-blue-600 {
+  background: #2563eb !important;
+}
+#view-login .bg-blue-600,
+#view-login .bg-blue-600 * {
+  color: #ffffff !important;
+}
+#view-login .hover\:bg-blue-700:hover {
+  background: #1d4ed8 !important;
+}
+#view-login .text-red-600 {
+  color: #dc2626 !important;
+}
