@@ -493,6 +493,20 @@ function highlightInstrument(inst) {
     b.classList.toggle("bg-blue-50", b.dataset.inst === inst);
     b.classList.toggle("text-blue-700", b.dataset.inst === inst);
   });
+  // Blauwe gloed achter het gitaar-icoon blijft aan zolang er een
+  // specifieke muzikant is gekozen (niet "Alle").
+  const iconBtn = $("#topInstrumentBtn");
+  if (iconBtn) iconBtn.classList.toggle("instrument-active", inst !== "all");
+}
+
+/** Speel éénmaal de rimpel-animatie op het gitaar-icoon af. */
+function pulseInstrumentIcon() {
+  const iconBtn = $("#topInstrumentBtn");
+  if (!iconBtn) return;
+  iconBtn.classList.remove("instrument-picked");
+  void iconBtn.offsetWidth; // forceer herstart van de CSS-animatie
+  iconBtn.classList.add("instrument-picked");
+  setTimeout(() => iconBtn.classList.remove("instrument-picked"), 750);
 }
 
 $("#topInstrumentBtn").addEventListener("click", () => {
@@ -505,6 +519,7 @@ $("#topInstrumentMenu").addEventListener("click", (e) => {
   if (!btn) return;
   state.instrument = btn.dataset.inst;
   highlightInstrument(state.instrument);
+  pulseInstrumentIcon();
   $("#topInstrumentMenu").classList.add("hidden");
   refreshSongView();
   loadDrawing();

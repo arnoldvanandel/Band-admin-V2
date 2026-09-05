@@ -574,3 +574,71 @@ html {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* --------------------------------------------------------------------------
+   Gitaar-icoon in de topbar (muzikant-kiezer)
+   Groter icoon + hover-gloed en een rimpel na het kiezen, conform de
+   spec in "Gitaar hoover.png": subtiele lijnen, lichtblauwe accenten
+   en zachte transparante rimpelingen.
+   -------------------------------------------------------------------------- */
+#topInstrumentBtn {
+  position: relative;
+}
+#topInstrumentBtn img {
+  display: block;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.18s ease;
+}
+#topInstrumentBtn:hover img {
+  transform: scale(1.12);
+}
+
+/* zachte lichtblauwe gloed achter het icoon */
+#topInstrumentBtn::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 36px;
+  height: 36px;
+  transform: translate(-50%, -50%) scale(0.8);
+  border-radius: 9999px;
+  background: radial-gradient(circle,
+    rgba(96, 165, 250, 0.35) 0%,
+    rgba(96, 165, 250, 0.12) 55%,
+    transparent 72%);
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+#topInstrumentBtn:hover::before,
+#topInstrumentBtn.instrument-active::before {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* uitzettende rimpel, wordt door app.js getriggerd via .instrument-picked */
+#topInstrumentBtn::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 36px;
+  height: 36px;
+  transform: translate(-50%, -50%) scale(0.6);
+  border-radius: 9999px;
+  border: 2px solid rgba(96, 165, 250, 0.55);
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+#topInstrumentBtn.instrument-picked::after {
+  animation: instrumentRipple 0.7s ease-out;
+}
+@keyframes instrumentRipple {
+  0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(0.6); }
+  70%  { opacity: 0.35; }
+  100% { opacity: 0;   transform: translate(-50%, -50%) scale(2.1); }
+}
+
