@@ -5,7 +5,7 @@
 //  eigen offline-persistentie via IndexedDB.
 // ============================================================================
 
-const VERSION = "v47";
+const VERSION = "v48";
 const APP_SHELL_CACHE = `band-admin-shell-${VERSION}`;
 const RUNTIME_CACHE = `band-admin-runtime-${VERSION}`;
 
@@ -14,6 +14,7 @@ const APP_SHELL = [
   "/",
   "/index.html",
   "/styles.css",
+  "/theme-bandadmin.css",
   "/logo-small.png",
   "/js/app.js",
   "/js/auth.js",
