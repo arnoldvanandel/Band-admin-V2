@@ -210,26 +210,3 @@ label { color: var(--ink) !important; }
 #netStatus { background: var(--live-bg) !important; color: var(--live-ink) !important; }
 #topInstrumentMenu { background: var(--surface) !important; border-color: var(--line-2) !important; }
 #userEmail { color: var(--ink-2) !important; }
-
-/* --- aanvullingen na test --- */
-
-/* Annuleer-knoppen kregen bij hover Tailwind's lichte bg-gray-300. */
-.hover\:bg-gray-300:hover { background-color: var(--surface-3) !important; }
-
-/* Amber-statusvlakken (setlistDirty, seed-knoppen) waren nog lichtgeel. */
-.bg-amber-100 { background-color: var(--accent-soft) !important; }
-.hover\:bg-amber-200:hover { background-color: rgba(227, 178, 60, 0.22) !important; }
-.text-amber-700, .text-amber-800 { color: var(--accent) !important; }
-.border-amber-300 { border-color: var(--accent-line) !important; }
-
-/* "opgeslagen ✓" en de roulette-notitie stonden in donkergroen op donker. */
-.text-green-600 { color: var(--live-ink) !important; }
-
-/* Rode rand van de setlist-verwijderknop was nog lichtrood. */
-.border-red-200 { border-color: rgba(226, 122, 114, 0.4) !important; }
-
-/* PDF-dropzone: hover-rand was nog blauw. */
-.hover\:border-blue-400:hover { border-color: var(--accent) !important; }
-
-/* Verwijderknop in de takenlijst: hover-tekst was nog Tailwind-rood. */
-.hover\:text-red-700:hover { color: var(--danger) !important; }
