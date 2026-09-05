@@ -1431,6 +1431,9 @@ document.querySelectorAll('input[name="scrollButtonPosition"]').forEach((radio) 
 document.querySelectorAll('input[name="chordDisplay"]').forEach((radio) => {
   radio.addEventListener("change", saveUserSettings);
 });
+document.querySelectorAll('input[name="theme"]').forEach((radio) => {
+  radio.addEventListener("change", saveUserSettings);
+});
 $("#settingsDrawMode").addEventListener("change", saveUserSettings);
 $("#settingsRehearsing").addEventListener("change", saveUserSettings);
 
