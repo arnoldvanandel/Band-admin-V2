@@ -1,0 +1,212 @@
+/* ==========================================================================
+   Band Admin — donker/goud thema ("Kolonel"-stijl)
+   --------------------------------------------------------------------------
+   Los bestand: verandert NIETS aan index.html, styles.css of app.js.
+   Aanzetten  : één <link>-regel in index.html (zie INSTALLEREN.md).
+   Uitzetten  : die regel weghalen. Klaar.
+
+   Merkkleuren staan in :root — voor een andere band wissel je --accent
+   (+ logo-small.png) en de rest volgt.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --accent: #E3B23C;          /* goud uit het logo */
+  --accent-ink: #17130F;      /* tekst óp goud */
+  --accent-soft: rgba(227, 178, 60, 0.14);
+  --accent-line: rgba(227, 178, 60, 0.42);
+
+  --bg: #0F0D0C;              /* app-achtergrond */
+  --surface: #17130F;         /* kaarten */
+  --surface-2: #201A15;       /* invoervelden, hover */
+  --surface-3: #2A231C;
+
+  --ink: #F5E9D5;             /* primaire tekst (crème) */
+  --ink-2: #A79B8C;           /* secundaire tekst — 4.6:1 op --bg */
+  --ink-3: #8C8074;           /* zwakke tekst, nog leesbaar */
+  --line: rgba(245, 233, 213, 0.10);
+  --line-2: rgba(245, 233, 213, 0.18);
+
+  --live: #7FB08A;            /* sessie / online / "aan" */
+  --live-bg: rgba(127, 176, 138, 0.14);
+  --live-ink: #9CCFA6;
+  --danger: #E27A72;
+
+  /* akkoorden: blauw haalt op donker geen contrast, dus goud */
+  --chord-color: var(--accent);
+}
+
+/* --- basis ---------------------------------------------------------------- */
+html, body { background: var(--bg) !important; }
+body {
+  color: var(--ink) !important;
+  font-family: Barlow, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, #songTitle, #editorTitle { font-family: 'Zilla Slab', Georgia, serif; letter-spacing: -0.01em; }
+::selection { background: var(--accent); color: var(--accent-ink); }
+::placeholder { color: var(--ink-3) !important; opacity: 1; }
+* { scrollbar-color: var(--line-2) transparent; }
+
+/* --- vlakken en randen (Tailwind-utilities) ------------------------------- */
+.bg-white { background-color: var(--surface) !important; }
+.bg-gray-50 { background-color: var(--surface-2) !important; }
+.bg-gray-100 { background-color: var(--surface-2) !important; }
+.bg-gray-200 { background-color: var(--surface-3) !important; }
+.hover\:bg-gray-50:hover { background-color: var(--surface-2) !important; }
+.hover\:bg-gray-100:hover { background-color: var(--surface-2) !important; }
+.hover\:bg-gray-200:hover { background-color: var(--surface-3) !important; }
+
+.border-gray-200 { border-color: var(--line) !important; }
+.border-gray-300, .border-gray-400 { border-color: var(--line-2) !important; }
+.divide-gray-200 > * + * { border-color: var(--line) !important; }
+
+.text-gray-900, .text-gray-800, .text-gray-700 { color: var(--ink) !important; }
+.text-gray-600, .text-gray-500 { color: var(--ink-2) !important; }
+.text-gray-400 { color: var(--ink-2) !important; }
+.text-gray-300 { color: var(--ink-3) !important; }
+
+.shadow, .shadow-sm, .shadow-md, .shadow-lg {
+  box-shadow: 0 1px 2px rgba(0,0,0,.5), 0 6px 20px rgba(0,0,0,.35) !important;
+}
+.hover\:shadow-md:hover {
+  box-shadow: 0 2px 4px rgba(0,0,0,.5), 0 10px 26px rgba(0,0,0,.45) !important;
+}
+
+/* Kaartjes in de liedjeslijst krijgen een dunne rand, anders zwemmen ze */
+#songList > div, #setlistSongs > div, #todoList > div {
+  border: 1px solid var(--line) !important;
+}
+#songList > div:hover { border-color: var(--accent-line) !important; }
+
+/* --- hoofdactie: blauw wordt goud ---------------------------------------- */
+.bg-blue-600, .bg-blue-500 { background-color: var(--accent) !important; }
+.bg-blue-600.text-white, .bg-blue-500.text-white,
+.bg-blue-600 *, .bg-blue-500 * { color: var(--accent-ink) !important; }
+.hover\:bg-blue-700:hover, .hover\:bg-blue-800:hover { background-color: #F2CD6B !important; }
+.text-blue-600, .text-blue-700, .text-blue-500 { color: var(--accent) !important; }
+.hover\:text-blue-700:hover { color: #F2CD6B !important; }
+.bg-blue-50, .bg-blue-100 { background-color: var(--accent-soft) !important; }
+.border-blue-200, .border-blue-300 { border-color: var(--accent-line) !important; }
+.tab-active { background-color: var(--accent) !important; color: var(--accent-ink) !important; }
+
+/* focus-ring */
+.focus\:ring-blue-500:focus, .focus\:ring-2:focus {
+  --tw-ring-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+/* --- live / sessie / online (groen blijft groen, maar donker-proof) ------- */
+.bg-green-600, .bg-green-500 { background-color: #2E7D4F !important; }
+.hover\:bg-green-700:hover { background-color: #358f5a !important; }
+.bg-green-50, .bg-green-100 { background-color: var(--live-bg) !important; }
+.border-green-200, .border-green-300 { border-color: rgba(127,176,138,.4) !important; }
+.text-green-700, .text-green-800, .text-green-900 { color: var(--live-ink) !important; }
+.hover\:bg-green-100:hover { background-color: rgba(127,176,138,.2) !important; }
+.footswitch-btn-on { background-color: #2E7D4F !important; border-color: #2E7D4F !important; color: #fff !important; }
+
+/* --- overige statuskleuren ----------------------------------------------- */
+.text-amber-500, .text-amber-600, .text-yellow-500 { color: var(--accent) !important; }
+.hover\:text-amber-600:hover { color: #F2CD6B !important; }
+.text-red-600, .text-red-500 { color: var(--danger) !important; }
+.hover\:text-red-600:hover { color: var(--danger) !important; }
+.bg-red-50, .bg-red-100 { background-color: rgba(226,122,114,.14) !important; }
+.bg-amber-50, .bg-yellow-50 { background-color: var(--accent-soft) !important; }
+
+/* --- formuliervelden ----------------------------------------------------- */
+input, textarea, select {
+  background-color: var(--surface-2) !important;
+  color: var(--ink) !important;
+  border-color: var(--line-2) !important;
+}
+input[type="search"] { -webkit-appearance: none; }
+select option { background: var(--surface-2); color: var(--ink); }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent) !important; }
+label { color: var(--ink) !important; }
+
+/* --- songweergave: akkoorden boven de tekst ------------------------------ */
+.song-body { color: var(--ink); }
+.song-line .chords { color: var(--accent); }
+.song-line .lyrics { color: var(--ink) !important; }
+
+.song-section { background: rgba(245,233,213,.035) !important; border-left-color: var(--ink-3) !important; }
+.song-section .section-header { color: var(--bg) !important; background: var(--ink-3) !important; }
+
+.sec-verse      { border-left-color: #7A8B99 !important; background: rgba(122,139,153,.10) !important; }
+.sec-verse      .section-header { background: #7A8B99 !important; color: var(--bg) !important; }
+.sec-chorus     { border-left-color: var(--accent) !important; background: rgba(227,178,60,.11) !important; }
+.sec-chorus     .section-header { background: var(--accent) !important; color: var(--accent-ink) !important; }
+.sec-solo       { border-left-color: #C77B3A !important; background: rgba(199,123,58,.11) !important; }
+.sec-solo       .section-header { background: #C77B3A !important; color: var(--bg) !important; }
+.sec-bridge     { border-left-color: #A585C4 !important; background: rgba(165,133,196,.11) !important; }
+.sec-bridge     .section-header { background: #A585C4 !important; color: var(--bg) !important; }
+.sec-intro, .sec-outro { border-left-color: #4FA69C !important; background: rgba(79,166,156,.11) !important; }
+.sec-intro .section-header, .sec-outro .section-header { background: #4FA69C !important; color: var(--bg) !important; }
+.sec-interlude  { border-left-color: #6FA86F !important; background: rgba(111,168,111,.11) !important; }
+.sec-interlude  .section-header { background: #6FA86F !important; color: var(--bg) !important; }
+.sec-pre-chorus { border-left-color: #8E9BD4 !important; background: rgba(142,155,212,.11) !important; }
+.sec-pre-chorus .section-header { background: #8E9BD4 !important; color: var(--bg) !important; }
+
+.section-label { color: var(--ink-2) !important; }
+
+/* opmerkingen */
+.section-notes { border-bottom-color: var(--line-2) !important; color: var(--ink-2); }
+.section-notes .sn-item, .line-notes .sn-item {
+  background: rgba(245,233,213,.06) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+.section-note-form .sn-instrument, .section-note-form .sn-text {
+  background: var(--surface-2) !important; border-color: var(--line-2) !important; color: var(--ink) !important;
+}
+.section-note-form button { background: var(--accent) !important; color: var(--accent-ink) !important; }
+.section-note-form button:hover { background: #F2CD6B !important; }
+.section-add { background: var(--surface) !important; border-color: var(--accent-line) !important; color: var(--accent) !important; }
+.section-add:hover { background: var(--accent-soft) !important; }
+.line-add { color: var(--accent) !important; }
+.line-add:hover { background: var(--accent-soft) !important; border-color: var(--accent-line) !important; }
+
+/* klikbare akkoorden */
+.chord-clickable:hover, .chord-clickable:active { color: #F2CD6B !important; text-decoration-color: var(--accent-line) !important; }
+#chordModalBody { background: var(--surface) !important; box-shadow: 0 14px 46px rgba(0,0,0,.7) !important; }
+
+/* editor-sectiekaarten */
+.section-card { background: var(--surface) !important; border-color: var(--line) !important; border-left-color: var(--ink-3) !important; }
+.section-card .sc-type, .section-card .sc-lines {
+  background: var(--surface-2) !important; border-color: var(--line-2) !important; color: var(--ink) !important;
+}
+.section-card .sc-actions button { background: var(--surface-2) !important; border-color: var(--line-2) !important; color: var(--ink) !important; }
+.section-card .sc-actions button:hover { background: var(--surface-3) !important; }
+.section-card .sc-del:hover { background: rgba(226,122,114,.18) !important; border-color: rgba(226,122,114,.4) !important; }
+
+/* --- zwevende knoppen ---------------------------------------------------- */
+#scrollDownBtn { background: var(--accent) !important; color: var(--accent-ink) !important; opacity: .62; }
+#scrollDownBtn:hover { background: #F2CD6B !important; }
+#scrollDownBtn.next-armed { background: #2E7D4F !important; color: #fff !important; }
+#scrollDownBtn.next-armed:hover { background: #358f5a !important; }
+@keyframes nextPulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(46,125,79,.45); }
+  50%      { box-shadow: 0 4px 24px rgba(46,125,79,.9); }
+}
+#drawToolbar button {
+  background: rgba(23,19,15,.94) !important;
+  border-color: var(--line-2) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,.55) !important;
+}
+#drawToolbar .draw-tool.selected { outline-color: var(--accent) !important; background: var(--accent-soft) !important; }
+
+/* --- liedjeskiezer ------------------------------------------------------- */
+.practice-reel { background: var(--surface) !important; border-color: var(--accent-line) !important; }
+.practice-tile { color: var(--ink) !important; font-family: 'Zilla Slab', Georgia, serif; }
+.practice-tile-idle { color: var(--ink-3) !important; }
+.practice-toast-body { background: var(--surface) !important; color: var(--ink) !important; }
+
+/* --- topbar-detail ------------------------------------------------------- */
+#topbar { background: #141110 !important; border-bottom: 1px solid var(--line) !important; }
+#brand img, #view-login img { filter: none; }
+#netStatus { background: var(--live-bg) !important; color: var(--live-ink) !important; }
+#topInstrumentMenu { background: var(--surface) !important; border-color: var(--line-2) !important; }
+#userEmail { color: var(--ink-2) !important; }

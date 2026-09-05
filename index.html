@@ -89,6 +89,24 @@
   <main class="max-w-4xl mx-auto px-4 py-6">
 
     <!-- ==================================================================
+         Actieve sessie-balk (setlist afspelen, beheerd door alle deelnemers)
+         ================================================================== -->
+    <div id="sessionBar" class="hidden mb-4 bg-green-50 border border-green-300 rounded-xl px-4 py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+      <span class="text-lg leading-none">🔴</span>
+      <div class="min-w-0">
+        <div class="font-semibold text-green-900 text-sm truncate">
+          Sessie: <span id="sessionBarName"></span>
+        </div>
+        <div id="sessionBarSub" class="text-xs text-green-700"></div>
+      </div>
+      <div class="ml-auto flex items-center gap-2">
+        <span id="sessionBarState" class="text-sm font-medium text-green-800"></span>
+        <button id="sessionPlayBtn" type="button" class="hidden bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg px-4 py-2"></button>
+        <button id="sessionEndBtn" type="button" class="hidden bg-white border border-green-300 text-green-800 hover:bg-green-100 text-sm font-medium rounded-lg px-3 py-2">Sessie beëindigen</button>
+      </div>
+    </div>
+
+    <!-- ==================================================================
          VIEW: Login
          ================================================================== -->
     <section id="view-login" class="view">
@@ -596,7 +614,7 @@
         <canvas id="drawCanvas"></canvas>
       </div>
 
-      <!-- Zwevende knop linksonder om naar beneden te scrollen -->
+      <!-- Zwevende scrollknop (positie instelbaar in de instellingen) -->
       <button id="scrollDownBtn" type="button" title="Naar beneden scrollen" aria-label="Naar beneden scrollen">↓</button>
 
       <!-- Zwevende teken-werkbalk rechtsonder -->
@@ -753,6 +771,28 @@
           <span id="myInstrumentSaved" class="text-xs text-green-600 hidden">opgeslagen ✓</span>
         </div>
 
+        <!-- Keuze: akkoordweergave bij klikken (gitaar of piano) -->
+        <fieldset class="border-b border-gray-200 pb-4">
+          <legend class="font-medium mb-1">🎵 Akkoordweergave</legend>
+          <p class="text-xs text-gray-500 mb-3">Wat wil je zien als je op een akkoord tikt in een liedje?</p>
+          <div class="space-y-2">
+            <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <input type="radio" name="chordDisplay" value="guitar" class="w-4 h-4 text-blue-600">
+              <div>
+                <p class="font-medium text-sm">🎸 Gitaargrepen</p>
+                <p class="text-xs text-gray-500">Toon het akkoord als gitaardiagram</p>
+              </div>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <input type="radio" name="chordDisplay" value="piano" class="w-4 h-4 text-blue-600">
+              <div>
+                <p class="font-medium text-sm">🎹 Piano</p>
+                <p class="text-xs text-gray-500">Toon het akkoord als pianoklavier (zoals Chordify)</p>
+              </div>
+            </label>
+          </div>
+        </fieldset>
+
         <!-- Keuze: modus leespagina -->
         <fieldset class="border-b border-gray-200 pb-4">
           <legend class="font-medium mb-3">📖 Modus leespagina</legend>
@@ -769,6 +809,27 @@
               <div>
                 <p class="font-medium text-sm">⏱ Autoscroll</p>
                 <p class="text-xs text-gray-500">Scrollt automatisch op basis van BPM</p>
+              </div>
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- Positie scrollknop tijdens het lezen -->
+        <fieldset class="border-b border-gray-200 pb-4">
+          <legend class="font-medium mb-3">Positie scrollknop</legend>
+          <div class="space-y-2">
+            <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <input type="radio" name="scrollButtonPosition" value="left" class="w-4 h-4 text-blue-600">
+              <div>
+                <p class="font-medium text-sm">Linksonder</p>
+                <p class="text-xs text-gray-500">Zwevende scrollknop linksonder in beeld</p>
+              </div>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <input type="radio" name="scrollButtonPosition" value="right" class="w-4 h-4 text-blue-600">
+              <div>
+                <p class="font-medium text-sm">Rechtsonder</p>
+                <p class="text-xs text-gray-500">Zwevende scrollknop rechtsonder in beeld</p>
               </div>
             </label>
           </div>
@@ -815,6 +876,18 @@
             <div class="text-left">
               <p class="font-medium">Akkoorden beheren</p>
               <p class="text-sm text-gray-500">Beheer de gitaargrepen-database voor klikbare akkoorden</p>
+            </div>
+            <span class="ml-auto text-gray-300">›</span>
+          </button>
+        </div>
+
+        <!-- Knop naar piano-akkoordenbeheer -->
+        <div class="pt-4 border-t border-gray-200">
+          <button id="openPianoChordsBtn" class="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+            <span class="text-xl">🎹</span>
+            <div class="text-left">
+              <p class="font-medium">Piano-akkoorden beheren</p>
+              <p class="text-sm text-gray-500">Pas de noten en vingerzetting van piano-akkoorden aan</p>
             </div>
             <span class="ml-auto text-gray-300">›</span>
           </button>
@@ -957,6 +1030,9 @@
                   Verwijderen
                 </button>
               </div>
+              <button type="button" id="startSessionBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-4 py-2 text-sm">
+                ▶ Sessie starten
+              </button>
             </div>
           </div>
 
@@ -992,6 +1068,20 @@
                 Annuleren
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Sessie starten -->
+      <div id="sessionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-lg p-6 max-w-md w-full mx-4">
+          <h3 class="text-lg font-semibold mb-1">Setlist-sessie starten</h3>
+          <p id="sessionModalSetlist" class="text-sm text-gray-500 mb-3"></p>
+          <p class="text-sm text-gray-600 mb-1">Kies welke bandleden meedoen (ieder bandlid kan de sessie daarna beheren):</p>
+          <div id="sessionMembersList" class="space-y-1 my-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-2"></div>
+          <div class="flex gap-2 pt-3">
+            <button type="button" id="confirmStartSessionBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg px-4 py-2">▶ Start sessie</button>
+            <button type="button" id="cancelStartSessionBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium rounded-lg px-4 py-2">Annuleren</button>
           </div>
         </div>
       </div>
@@ -1069,6 +1159,62 @@
       </div>
       <p id="chordsEmpty" class="hidden text-gray-500 text-center py-10">
         Geen akkoorden gevonden. Voeg er een toe of gebruik "Seed voorbeelden".
+      </p>
+    </section>
+
+    <!-- ==================================================================
+         VIEW: Piano-akkoordenbeheer
+         ================================================================== -->
+    <section id="view-piano-chords" class="view">
+      <h1 class="text-2xl font-bold mb-5">🎹 Piano-akkoorden beheren</h1>
+
+      <!-- Nieuw/bewerk piano-akkoord formulier -->
+      <div class="bg-white rounded-2xl shadow p-5 mb-4">
+        <h2 class="font-semibold mb-3" id="pianoChordFormTitle">Nieuw piano-akkoord toevoegen</h2>
+        <form id="pianoChordForm" class="space-y-3">
+          <input type="hidden" id="pianoChordEditId">
+          <div class="flex flex-wrap items-end gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1" for="fPianoChordName">Naam</label>
+              <input id="fPianoChordName" required placeholder="C7" class="w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <button type="button" id="pianoAutoFillBtn" class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium rounded-lg px-3 py-2 text-sm border border-blue-200">
+              ✨ Automatisch invullen
+            </button>
+            <p class="text-xs text-gray-400 pb-2">Vult de noten en vingers in op basis van de akkoordnaam.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Noten &amp; vingers (maximaal 4)</label>
+            <div id="pianoNoteRows" class="space-y-2"></div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 items-center">
+            <button type="submit" id="pianoChordSaveBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2 text-sm">
+              Opslaan
+            </button>
+            <button type="button" id="pianoChordCancelBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg px-4 py-2 text-sm hidden">
+              Annuleren
+            </button>
+            <div id="pianoChordPreview" class="ml-auto hidden" style="width: 420px; max-width: 100%;"></div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Zoeken + seed -->
+      <div class="flex gap-2 mb-4">
+        <input id="pianoChordSearch" type="search" placeholder="Zoek piano-akkoord…" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        <button id="pianoSeedBtn" type="button" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-medium rounded-lg px-4 py-2 text-sm border border-amber-300 whitespace-nowrap">
+          🌱 Seed voorbeelden
+        </button>
+      </div>
+
+      <!-- Piano-akkoordenlijst -->
+      <div id="pianoChordsList" class="space-y-2">
+        <p class="text-gray-400 text-sm italic">Laden…</p>
+      </div>
+      <p id="pianoChordsEmpty" class="hidden text-gray-500 text-center py-10">
+        Geen piano-akkoorden gevonden. Voeg er een toe of gebruik "Seed voorbeelden".
       </p>
     </section>
 

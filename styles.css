@@ -404,6 +404,18 @@ html {
   display: none;
 }
 
+/* Sessie-volgers scrollen zelf; er is geen scroll-lock meer. */
+
+/* Instelling: scrollknop rechtsonder in plaats van linksonder. */
+#view-song.scroll-btn-right #scrollDownBtn {
+  left: auto;
+  right: 1.25rem;
+}
+/* Voorkom overlap met de teken-werkbalk: plaats die boven de knop. */
+#view-song.scroll-btn-right #drawToolbar {
+  bottom: calc(1.25rem + 6.5rem + 0.9rem);
+}
+
 /* Live-modus: knop verandert in een "volgend nummer"-balk aan het einde. */
 #scrollDownBtn.next-armed {
   width: auto;
@@ -561,3 +573,4 @@ html {
   from { opacity: 0; transform: translateY(1rem) scale(0.96); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+

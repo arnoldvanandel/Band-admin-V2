@@ -44,9 +44,11 @@ const USERS = "users";
 const DRAWINGS = "drawings";
 const SETLISTS = "setlists";
 const CHORDS = "chords";
+const PIANO_CHORDS = "pianoChords";
 const PRESENCE = "presence";
 const PRACTICE = "practice";
 const TODOS = "todos";
+const SESSIONS = "sessions";
 
 // --- Handgeschreven tekenlaag (per liedje + gebruiker + instrument) ----------
 
@@ -283,6 +285,31 @@ export async function deleteChord(chordName) {
   await deleteDoc(doc(db, CHORDS, chordName));
 }
 
+// --- Piano-akkoorden (aangepaste noten + vingerzetting) ----------------------
+
+/** Haal één piano-akkoord op uit de 'pianoChords' collectie. */
+export async function getPianoChord(chordName) {
+  const snap = await getDoc(doc(db, PIANO_CHORDS, chordName));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() };
+}
+
+/** Haal alle piano-akkoorden op (voor offline caching). */
+export async function getAllPianoChords() {
+  const snap = await getDocs(collection(db, PIANO_CHORDS));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+/** Schrijf een piano-akkoorddocument naar de 'pianoChords' collectie. */
+export async function setPianoChord(chordName, data) {
+  await setDoc(doc(db, PIANO_CHORDS, chordName), data);
+}
+
+/** Verwijder een piano-akkoord uit de 'pianoChords' collectie. */
+export async function deletePianoChord(chordName) {
+  await deleteDoc(doc(db, PIANO_CHORDS, chordName));
+}
+
 // --- Aanwezigheid (presence) -------------------------------------------------
 // Elk online bandlid schrijft met een vaste interval een heartbeat-document.
 // Een gebruiker geldt als "online" zolang zijn `lastSeen` recent is. Het
@@ -359,6 +386,67 @@ export function watchRequiredMembers(callback, onError) {
     doc(db, PRACTICE, "required"),
     (snap) => callback(snap.exists() ? snap.data().members || [] : []),
     onError || ((e) => console.error("Verplichte leden luisteren mislukt:", e))
+  );
+}
+
+// --- Sessies (realtime setlist afspelen, beheerd door alle deelnemers) --------
+// Eén gedeeld document `sessions/active` beschrijft de lopende sessie:
+// {
+//   setlistId, setlistName,
+//   leaderUid, leaderName,        // aanmaker van de sessie (ter info)
+//   members: [{ uid, name }],     // deelnemende bandleden (inclusief de aanmaker)
+//   songIds: [...],               // setlist-volgorde
+//   songIndex: number,            // huidig nummer
+//   playing: boolean,             // iemand heeft het huidige nummer gestart
+//   actorUid: string,             // wie de laatste sessie-actie deed
+//   updatedAt: Timestamp
+// }
+
+/** Start een nieuwe sessie (overschrijft een eventuele bestaande actieve sessie). */
+export async function startSession({
+  setlistId,
+  setlistName,
+  leaderUid,
+  leaderName,
+  members = [],
+  songIds = [],
+  songIndex = 0,
+  playing = false,
+  actorUid = "",
+}) {
+  await setDoc(doc(db, SESSIONS, "active"), {
+    setlistId: setlistId || "",
+    setlistName: setlistName || "",
+    leaderUid: leaderUid || "",
+    leaderName: leaderName || "",
+    members: members || [],
+    songIds: songIds || [],
+    songIndex: songIndex || 0,
+    playing: !!playing,
+    actorUid: actorUid || leaderUid || "",
+    updatedAt: Timestamp.now(),
+  });
+}
+
+/** Werk de actieve sessie bij (merge), bijv. { songIndex: 3 } of { playing: true }. */
+export async function updateSession(data) {
+  await updateDoc(doc(db, SESSIONS, "active"), { ...data, updatedAt: Timestamp.now() });
+}
+
+/** Beëindig de actieve sessie (iedereen stopt met volgen). */
+export async function endSession() {
+  await deleteDoc(doc(db, SESSIONS, "active"));
+}
+
+/**
+ * Luister naar de actieve sessie. De callback krijgt het document
+ * (of null als er geen sessie actief is). Geeft een unsubscribe-functie terug.
+ */
+export function watchSession(callback, onError) {
+  return onSnapshot(
+    doc(db, SESSIONS, "active"),
+    (snap) => callback(snap.exists() ? { id: snap.id, ...snap.data() } : null),
+    onError || ((e) => console.error("Sessie luisteren mislukt:", e))
   );
 }
 

@@ -30,6 +30,10 @@ import {
   getAllChords,
   setChord,
   deleteChord,
+  getPianoChord,
+  getAllPianoChords,
+  setPianoChord,
+  deletePianoChord,
   setPresence,
   clearPresence,
   watchPresence,
@@ -37,6 +41,10 @@ import {
   watchPractice,
   setRequiredMembers,
   watchRequiredMembers,
+  startSession,
+  updateSession,
+  endSession,
+  watchSession,
   createTodo,
   updateTodoDoc,
   deleteTodoDoc,
@@ -45,6 +53,7 @@ import {
 import { parseSongText, serializeLines, renderLine, sectionLabel, transposeChordName } from "./song-format.js";
 import { pdfToText } from "./pdf-import.js";
 import { renderChordSVG, showChordModal, hideChordModal } from "./chord-diagram.js";
+import { renderPianoChordSVG, chordToNotes, chordVoicing, pitchClassName } from "./piano-chord.js";
 import { EXAMPLE_CHORDS } from "./seed-data.js";
 
 // ---------------------------------------------------------------------------
@@ -62,8 +71,10 @@ const state = {
   // Globale instellingen (uit userSettings/localStorage):
   settings: {
     readingMode: "footswitch", // "footswitch" | "autoscroll" — modus leespagina
+    scrollButtonPosition: "left", // "left" | "right" — positie zwevende scrollknop
     enableDrawMode: true,      // canvas-tekenmodus aan/uit
     rehearsing: false,         // "ik ben aan het repeteren" → ontvang oefenkeuzes
+    chordDisplay: "guitar",    // "guitar" | "piano" — wat toon je bij klik op een akkoord
   },
   // Setlist management:
   currentSetlist: null,        // geladen setlist-document (id, name, date, songIds)
@@ -73,6 +84,7 @@ const state = {
   perform: null,               // { songIds:[...], index } bij navigeren vanuit een setlist
   atSongEnd: false,            // live-modus: einde liedje bereikt → volgende klik = volgend nummer
   chordCache: {},              // lokale cache van opgehaalde gitaargrepen (key = akkoordnaam)
+  pianoChordCache: {},         // lokale cache van aangepaste piano-akkoorden (key = akkoordnaam)
   // Aanwezigheid & oefenkeuze (realtime):
   presenceList: [],            // laatste snapshot van presence-documenten
   presenceTimer: null,         // heartbeat-interval
@@ -83,6 +95,9 @@ const state = {
   lastPracticeNonce: null,     // nonce van de laatst geziene/verzonden keuze
   requiredMembers: [],         // [{ uid, name }] bandleden die verplicht meedoen
   requiredUnsub: null,         // unsubscribe van de required-members-listener
+  // Setlist-sessie (realtime afspelen, beheerd door alle deelnemers):
+  session: null,               // actieve sessie-document of null
+  sessionUnsub: null,          // unsubscribe van de session-listener
 };
 
 const INSTRUMENTS = [
@@ -145,7 +160,7 @@ function showView(name) {
   $(`#view-${name}`).classList.add("active");
   // Topbar-knoppen per view
   $("#topSave").classList.toggle("hidden", name !== "editor" && name !== "setlist");
-  $("#topCancelEdit").classList.toggle("hidden", name !== "editor" && name !== "song" && name !== "settings" && name !== "setlist" && name !== "todo" && name !== "chords" && name !== "practice");
+  $("#topCancelEdit").classList.toggle("hidden", name !== "editor" && name !== "song" && name !== "settings" && name !== "setlist" && name !== "todo" && name !== "chords" && name !== "piano-chords" && name !== "practice");
   $("#topFootswitch").classList.add("hidden");
   $("#topAutoscroll").classList.add("hidden");
   $("#netStatus").classList.toggle("hidden", name !== "dashboard");
@@ -197,6 +212,7 @@ function routeTo(desc) {
     case "setlist": openSetlist(); break;
     case "todo": openTodo(); break;
     case "chords": openChords(); break;
+    case "piano-chords": openPianoChords(); break;
     case "practice": openPractice(); break;
   }
 }
@@ -420,6 +436,7 @@ async function openSong(id, perform = null) {
   updateSetlistNav();
   resetDrawing();   // begin met een schone tekenlaag
   stopAutoScroll(); // eventueel lopend autoscroll stoppen; knop bijwerken
+  autoIntroDone = false; // nieuw liedje: bij de eerste start weer snelle voorscroll
   $("#songBody").innerHTML = `<p class="text-gray-400">Laden…</p>`;
   const song = await getSong(id);
   if (!song) {
@@ -460,19 +477,8 @@ async function openSong(id, perform = null) {
   refreshSongView();
   loadDrawing(); // laad de tekenlaag voor dit liedje + instrument
 
-  // Stel de leesmodus in volgens de user settings
-  if (state.settings.readingMode === "autoscroll") {
-    disableFootswitch();
-    state.autoscroll = true;
-    $("#topAutoscrollState").textContent = "aan";
-    $("#topAutoscroll").classList.add("footswitch-btn-on");
-  } else {
-    state.autoscroll = false;
-    enableFootswitch();
-  }
-  updateScrollButton();
-  // Teken-icoontjes verbergen/tonen op basis van instelling
-  $("#drawToolbar").style.display = state.settings.enableDrawMode ? "" : "none";
+  // Stel leesmodus, scrollknop-positie en tekenmodus in volgens de user settings
+  applySettingsToUI();
 
   // In live-modus: check na de layout of het liedje al helemaal past (korte
   // songs zijn dan direct "aan het einde", zodat de eerste pedaaltik doorschuift).
@@ -542,6 +548,7 @@ function renderSongBody(song) {
   for (const section of song.content) {
     body.appendChild(renderSection(section, { withNotes: true }));
   }
+  invalidateSongLineCache(); // de .song-line-elementen zijn opnieuw opgebouwd
   scheduleFit();
 }
 
@@ -926,19 +933,31 @@ function applySettingsToUI() {
       enableFootswitch();
     }
   }
+  applyScrollButtonPosition();
   updateScrollButton();
   // Teken-icoontjes verbergen/tonen op basis van instelling
   $("#drawToolbar").style.display = state.settings.enableDrawMode ? "" : "none";
+}
+
+/** Zet de zwevende scrollknop links- of rechtsonder volgens de user settings. */
+function applyScrollButtonPosition() {
+  const songView = document.getElementById("view-song");
+  if (!songView) return;
+  songView.classList.toggle("scroll-btn-right", state.settings.scrollButtonPosition === "right");
 }
 
 /** Opslaan: formulier → state → Firestore + localStorage. */
 async function saveUserSettings() {
   if (!state.user) return;
   const readingMode = document.querySelector('input[name="readingMode"]:checked')?.value || "footswitch";
+  const scrollButtonPosition = document.querySelector('input[name="scrollButtonPosition"]:checked')?.value || "left";
+  const chordDisplay = document.querySelector('input[name="chordDisplay"]:checked')?.value || "guitar";
   const settings = {
     readingMode,
+    scrollButtonPosition,
     enableDrawMode: $("#settingsDrawMode").checked,
     rehearsing: $("#settingsRehearsing").checked,
+    chordDisplay,
   };
   state.settings = settings;
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -957,6 +976,10 @@ function openSettings() {
   showView("settings");
   const radio = document.querySelector(`input[name="readingMode"][value="${state.settings.readingMode || "footswitch"}"]`);
   if (radio) radio.checked = true;
+  const posRadio = document.querySelector(`input[name="scrollButtonPosition"][value="${state.settings.scrollButtonPosition || "left"}"]`);
+  if (posRadio) posRadio.checked = true;
+  const chordRadio = document.querySelector(`input[name="chordDisplay"][value="${state.settings.chordDisplay || "guitar"}"]`);
+  if (chordRadio) chordRadio.checked = true;
   $("#settingsDrawMode").checked = state.settings.enableDrawMode;
   $("#settingsRehearsing").checked = state.settings.rehearsing;
   $("#myInstrument").value = state.myInstrument;
@@ -1195,6 +1218,7 @@ function playFromSetlist(index) {
     { view: "song", id, perform: { songIds, index } },
     () => openSong(id, { songIds, index })
   );
+  broadcastSessionSong(songIds, index);
 }
 
 // Setlist-view: Nieuwe setlist aanmaken
@@ -1366,6 +1390,13 @@ $("#setlistNextBtn")?.addEventListener("click", () => {
 });
 $("#setlistBackBtn")?.addEventListener("click", () => history.back());
 
+// --- Sessie-knoppen (starten/besturen/beëindigen) -----------------------------
+$("#startSessionBtn").addEventListener("click", openSessionModal);
+$("#cancelStartSessionBtn").addEventListener("click", closeSessionModal);
+$("#confirmStartSessionBtn").addEventListener("click", confirmSessionStart);
+$("#sessionPlayBtn").addEventListener("click", toggleSessionPlayback);
+$("#sessionEndBtn").addEventListener("click", endCurrentSession);
+
 function playFromSetlistContext(index) {
   const p = state.perform;
   if (!p) return;
@@ -1375,10 +1406,17 @@ function playFromSetlistContext(index) {
     { view: "song", id, perform: { songIds: p.songIds, index } },
     () => openSong(id, { songIds: p.songIds, index })
   );
+  broadcastSessionSong(p.songIds, index);
 }
 
 // Auto-save bij elke wijziging in instellingen
 document.querySelectorAll('input[name="readingMode"]').forEach((radio) => {
+  radio.addEventListener("change", saveUserSettings);
+});
+document.querySelectorAll('input[name="scrollButtonPosition"]').forEach((radio) => {
+  radio.addEventListener("change", saveUserSettings);
+});
+document.querySelectorAll('input[name="chordDisplay"]').forEach((radio) => {
   radio.addEventListener("change", saveUserSettings);
 });
 $("#settingsDrawMode").addEventListener("change", saveUserSettings);
@@ -1431,6 +1469,14 @@ async function preloadChords() {
   } catch (ex) {
     console.warn("Akkoorden preloaden mislukt (geen netwerk?):", ex.message);
   }
+  try {
+    const allPiano = await getAllPianoChords();
+    for (const ch of allPiano) {
+      state.pianoChordCache[ch.id] = ch;
+    }
+  } catch (ex) {
+    console.warn("Piano-akkoorden preloaden mislukt (geen netwerk?):", ex.message);
+  }
 }
 
 /** Event-delegatie: klik op een akkoord boven de songtekst. */
@@ -1439,6 +1485,25 @@ $("#songBody").addEventListener("click", async (e) => {
   if (!chordEl) return;
   const chordName = chordEl.dataset.chord;
   if (!chordName) return;
+
+  // Piano-weergave: toon een aangepast piano-akkoord uit de database als dat
+  // bestaat; anders worden de noten lokaal uit de akkoordnaam berekend.
+  if (state.settings.chordDisplay === "piano") {
+    let pianoData = state.pianoChordCache[chordName];
+    if (!pianoData) {
+      try {
+        pianoData = await getPianoChord(chordName);
+        if (pianoData) state.pianoChordCache[chordName] = pianoData;
+      } catch (ex) {
+        console.error("Piano-akkoord ophalen mislukt:", ex);
+      }
+    }
+    const custom = pianoData && Array.isArray(pianoData.notes) && pianoData.notes.length
+      ? pianoData
+      : null;
+    showChordModal(renderPianoChordSVG(chordName, custom), { wide: true });
+    return;
+  }
 
   // Check cache
   let chordData = state.chordCache[chordName];
@@ -1825,27 +1890,133 @@ function handlePageturnerKey(e) {
 
   if (forward.includes(e.key) || forward.includes(e.code)) {
     e.preventDefault();
-    // Live-modus: aan het einde van het liedje schuift een vooruit-input door
-    // naar het volgende nummer i.p.v. verder te scrollen.
-    if (isLiveMode() && state.atSongEnd) { advanceSetlist(); return; }
-    window.scrollBy({ top: SCROLL_STEP(), behavior: "smooth" });
+    scrollForwardStep();
   } else if (backward.includes(e.key) || backward.includes(e.code)) {
     e.preventDefault();
-    window.scrollBy({ top: -SCROLL_STEP(), behavior: "smooth" });
+    scrollBackwardStep();
   }
 }
 window.addEventListener("keydown", handlePageturnerKey);
 
+/** Schuif één schermstap naar beneden (of ga in live-modus aan het einde
+ *  naar het volgende nummer). */
+function scrollForwardStep() {
+  // Live-modus: aan het einde van het liedje schuift een vooruit-input door
+  // naar het volgende nummer i.p.v. verder te scrollen.
+  if (isLiveMode() && state.atSongEnd) { advanceSetlist(); return; }
+  window.scrollBy({ top: SCROLL_STEP(), behavior: "smooth" });
+}
+
+/** Schuif één schermstap naar boven. */
+function scrollBackwardStep() {
+  window.scrollBy({ top: -SCROLL_STEP(), behavior: "smooth" });
+}
+
+// ---------------------------------------------------------------------------
+//  MEDIA-KNOPPEN VAN BLUETOOTH-PAGETURNERS (play/pauze/volgende/vorige)
+//  Sommige pageturners sturen media-toetsen (Play/Pause/Next/Prev) in plaats
+//  van PageDown/PageUp. We vangen die zowel via keydown als via de
+//  Media Session API (hardware-mediaknoppen op tablets/telefoons).
+// ---------------------------------------------------------------------------
+const MEDIA_PLAY_KEYS = new Set(["MediaPlay", "MediaPlayPause", "AudioPlay"]);
+const MEDIA_PAUSE_KEYS = new Set(["MediaPause", "MediaStop", "AudioPause", "AudioStop"]);
+const MEDIA_NEXT_KEYS = new Set(["MediaTrackNext", "AudioNext"]);
+const MEDIA_PREV_KEYS = new Set(["MediaTrackPrevious", "AudioPrev"]);
+const MEDIA_PLAY_KEYCODES = new Set([179, 250]); // 179 = MediaPlayPause, 250 = Play (legacy)
+const MEDIA_PAUSE_KEYCODES = new Set([178, 251]); // 178 = MediaStop, 251 = Pause (legacy)
+const MEDIA_NEXT_KEYCODES = new Set([176]);
+const MEDIA_PREV_KEYCODES = new Set([177]);
+
+/** Alleen actief op de leespagina van een liedje. */
+function isSongViewActive() {
+  const songView = document.getElementById("view-song");
+  return !!songView && songView.classList.contains("active") && !!state.currentSong;
+}
+
+function handleMediaControlKey(e) {
+  if (!isSongViewActive()) return;
+  const tag = (e.target.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable) {
+    return;
+  }
+
+  const key = e.key || "";
+  const keyCode = e.keyCode || e.which || 0;
+
+  if (MEDIA_PLAY_KEYS.has(key) || MEDIA_PLAY_KEYCODES.has(keyCode)) {
+    e.preventDefault();
+    // Play/pauze-knop werkt als toggle: start of pauzeer het BPM-scrollen.
+    if (autoScrolling) {
+      stopAutoScroll();
+    } else {
+      startAutoScroll();
+    }
+  } else if (MEDIA_PAUSE_KEYS.has(key) || MEDIA_PAUSE_KEYCODES.has(keyCode)) {
+    e.preventDefault();
+    stopAutoScroll();
+  } else if (MEDIA_NEXT_KEYS.has(key) || MEDIA_NEXT_KEYCODES.has(keyCode)) {
+    e.preventDefault();
+    scrollForwardStep();
+  } else if (MEDIA_PREV_KEYS.has(key) || MEDIA_PREV_KEYCODES.has(keyCode)) {
+    e.preventDefault();
+    scrollBackwardStep();
+  }
+}
+window.addEventListener("keydown", handleMediaControlKey);
+
+/** Koppel hardware-mediaknoppen (bluetooth-afstandsbediening/pedaal) aan de app. */
+function setupMediaSessionControls() {
+  if (!("mediaSession" in navigator)) return;
+  try {
+    navigator.mediaSession.setActionHandler("play", () => {
+      if (isSongViewActive() && !autoScrolling) startAutoScroll();
+    });
+    navigator.mediaSession.setActionHandler("pause", () => {
+      if (isSongViewActive()) stopAutoScroll();
+    });
+    navigator.mediaSession.setActionHandler("stop", () => {
+      if (isSongViewActive()) stopAutoScroll();
+    });
+    navigator.mediaSession.setActionHandler("nexttrack", () => {
+      if (isSongViewActive()) scrollForwardStep();
+    });
+    navigator.mediaSession.setActionHandler("previoustrack", () => {
+      if (isSongViewActive()) scrollBackwardStep();
+    });
+  } catch (ex) {
+    console.error("Media Session-knoppen instellen mislukt:", ex);
+  }
+}
+setupMediaSessionControls();
+
+/** Houd de Media Session-status bij, zodat bluetooth-mediaknoppen de app
+ *  als actieve 'speler' zien en play/pauze blijven werken. */
+function setMediaSessionPlaybackState(playbackState) {
+  if (!("mediaSession" in navigator)) return;
+  try {
+    navigator.mediaSession.playbackState = playbackState;
+    if (playbackState === "playing" && !navigator.mediaSession.metadata) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: (state.currentSong && state.currentSong.title) || "Band Admin",
+      });
+    }
+  } catch (ex) {
+    // Niet elke browser ondersteunt MediaSession/Metadata.
+  }
+}
+
 // Zwevende blauwe knop linksonder:
 //  - live-modus aan het einde: ga naar het volgende nummer (of einde setlist);
 //  - normaal: scroll soepel een stap naar beneden;
-//  - in autoscroll-modus: start/stop het automatisch scrollen.
+//  - in autoscroll-modus (of terwijl autoscroll loopt): start/stop het scrollen.
 $("#scrollDownBtn").addEventListener("click", () => {
   if (isLiveMode() && state.atSongEnd) { advanceSetlist(); return; }
-  if (state.autoscroll) {
-    autoScrolling ? stopAutoScroll() : startAutoScroll();
+  if (autoScrolling) {
+    stopAutoScroll();
+  } else if (state.autoscroll) {
+    startAutoScroll();
   } else {
-    window.scrollBy({ top: SCROLL_STEP(), behavior: "smooth" });
+    scrollForwardStep();
   }
 });
 
@@ -1870,15 +2041,20 @@ function isAtPageBottom() {
 /**
  * Bepaal of we "aan het einde" staan en werk de knop bij. Wordt aangeroepen
  * bij elke scroll en na het laden van een liedje. Alleen relevant in live-modus.
+ *
+ * `forceEnd` wordt gebruikt door de tijdgebaseerde einde-detectie van de
+ * autoscroll: zodra de laatste regel op de focuspositie is geweest, geven we
+ * het einde expliciet door. Een handmatige scroll omhoog zet `atSongEnd`
+ * daarna weer terug naar `false`, precies zoals voorheen.
  */
-function updateEndArming() {
-  const armed = isLiveMode() && isAtPageBottom();
+function updateEndArming({ forceEnd = false } = {}) {
+  const armed = isLiveMode() && (isAtPageBottom() || forceEnd);
   if (armed !== state.atSongEnd) {
     state.atSongEnd = armed;
     updateScrollButton();
   }
 }
-window.addEventListener("scroll", updateEndArming, { passive: true });
+window.addEventListener("scroll", () => updateEndArming(), { passive: true });
 
 /** Ga naar het volgende nummer in de setlist, of sluit de setlist af. */
 function advanceSetlist() {
@@ -1896,6 +2072,349 @@ function advanceSetlist() {
     { view: "song", id: p.songIds[nextIndex], perform: { songIds: p.songIds, index: nextIndex } },
     () => openSong(p.songIds[nextIndex], { songIds: p.songIds, index: nextIndex })
   );
+  broadcastSessionSong(p.songIds, nextIndex);
+}
+
+// ===========================================================================
+//  SETLIST-SESSIE (realtime setlist afspelen, beheerd door álle deelnemers)
+//  Ieder bandlid kan het nummer kiezen, het starten voor iedereen en de sessie
+//  beëindigen. Na de start scrollt ieder zelf; bij een nieuw nummer worden de
+//  anderen 'overruled' en openen ze het gekozen nummer.
+// ===========================================================================
+
+let sessionFollowSeq = 0; // om verouderde, nog lopende follow-acties te negeren
+
+/** Ben ik deelnemer aan de actieve sessie? */
+function isSessionMember() {
+  return !!(
+    state.session &&
+    state.user &&
+    (state.session.members || []).some((m) => m.uid === state.user.uid)
+  );
+}
+
+// Ieder bandlid in een sessie heeft dezelfde functionaliteit: nummer starten,
+// nummer wisselen en de sessie beëindigen. Scrollen doet ieder zelf.
+
+/** Stop lokaal met volgen (autoscroll uit, setlist-context weg). */
+function stopFollowingLocally() {
+  stopAutoScroll();
+  state.perform = null;
+  state.atSongEnd = false;
+  updateSetlistNav();
+  updateScrollButton();
+}
+
+/** Verwerk een update van het actieve sessie-document. */
+function handleSessionUpdate(session) {
+  const prev = state.session;
+  const wasMember =
+    !!prev && !!state.user &&
+    (prev.members || []).some((m) => m.uid === state.user.uid);
+
+  state.session = session;
+  renderSessionBar();
+
+  if (!session) {
+    if (wasMember) stopFollowingLocally();
+    return;
+  }
+
+  const isMemberNow = (session.members || []).some((m) => m.uid === state.user?.uid);
+  if (!isMemberNow) {
+    if (wasMember) stopFollowingLocally();
+    return;
+  }
+
+  // De uitvoerder van een sessie-actie heeft lokaal al gehandeld; alleen de
+  // andere deelnemers volgen de update. Bij oudere sessies zonder actorUid
+  // blijft de aanmaker (leaderUid) buiten de follow-loop.
+  const actedByMe =
+    (session.actorUid && session.actorUid === state.user?.uid) ||
+    (!session.actorUid && session.leaderUid === state.user?.uid);
+  if (actedByMe) return;
+
+  sessionFollowSeq++;
+  followSession(session, prev, sessionFollowSeq);
+}
+
+/** Als deelnemer: open het nummer van de sessie; start autoscroll alleen wanneer
+ *  een bandlid het nummer voor iedereen heeft gestart. */
+async function followSession(session, prev, seq) {
+  const songIds = Array.isArray(session.songIds) ? session.songIds : [];
+  const index = Math.max(0, Math.min(session.songIndex || 0, songIds.length - 1));
+  const songId = songIds[index];
+  if (!songId) return;
+
+  const alreadyThere =
+    isLiveMode() &&
+    state.currentSong?.id === songId &&
+    state.perform?.index === index;
+
+  if (!alreadyThere) {
+    const desc = { view: "song", id: songId, perform: { songIds, index } };
+    if (prev) history.replaceState(desc, "");
+    else history.pushState(desc, "");
+    await openSong(songId, { songIds, index });
+    // Als er tijdens het laden al een nieuwere sessie-update was: stop.
+    if (seq !== sessionFollowSeq) return;
+  }
+
+  // Een bandlid start het liedje (playing=true) één keer voor alle deelnemers.
+  // Daarna scrollt ieder zelf; een lokale pauze van een ander stopt niemand.
+  const latest = state.session;
+  if (latest?.playing) {
+    state.autoscroll = true;
+    if (!autoScrolling && autoScrollPxPerSec() > 0) startAutoScroll();
+    updateScrollButton();
+  }
+}
+
+/** Render de sessiebalk bovenaan de app (alle deelnemers krijgen de knoppen). */
+function renderSessionBar() {
+  const bar = $("#sessionBar");
+  if (!bar) return;
+  const s = state.session;
+  if (!s) {
+    bar.classList.add("hidden");
+    return;
+  }
+
+  bar.classList.remove("hidden");
+  $("#sessionBarName").textContent = s.setlistName || "Setlist";
+  const creatorName = memberDisplayName(s.leaderName);
+  const counter = `Nummer ${(s.songIndex ?? 0) + 1} / ${(s.songIds || []).length}`;
+  const isMember = (s.members || []).some((m) => m.uid === state.user?.uid);
+  $("#sessionBarSub").textContent =
+    `Aangemaakt door ${creatorName} · ${counter}` +
+    (isMember ? " · je doet mee" : " · je doet niet mee");
+
+  const stateEl = $("#sessionBarState");
+  const playBtn = $("#sessionPlayBtn");
+  const endBtn = $("#sessionEndBtn");
+
+  if (isMember) {
+    endBtn.classList.remove("hidden");
+    if (s.playing) {
+      stateEl.textContent = "▶ gestart · ieder scrolt zelf";
+      playBtn.classList.add("hidden");
+    } else {
+      stateEl.textContent = "⏸ nog niet gestart";
+      playBtn.classList.remove("hidden");
+      playBtn.textContent = "▶ Start liedje";
+      playBtn.title = "Liedje starten (autoscroll) voor alle deelnemers";
+    }
+  } else {
+    endBtn.classList.add("hidden");
+    playBtn.classList.add("hidden");
+    stateEl.textContent = "je doet niet mee";
+  }
+}
+
+/** Vergelijk twee string-arrays op gelijke inhoud. */
+function sameStringArray(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  return a.every((v, i) => v === b[i]);
+}
+
+/** Broadcast als deelnemer: huidig nummer (en eventueel de volgorde) wijzigen. */
+function broadcastSessionSong(songIds, index) {
+  if (!isSessionMember() || !state.session) return;
+  if (sameStringArray(state.session.songIds, songIds) && state.session.songIndex === index) return;
+  state.session.songIds = (songIds || []).slice();
+  state.session.songIndex = index;
+  state.session.playing = false; // nieuw nummer: straks start iemand het opnieuw voor iedereen
+  state.session.actorUid = state.user.uid;
+  renderSessionBar();
+  updateSession({
+    songIds: state.session.songIds,
+    songIndex: index,
+    playing: false,
+    actorUid: state.user.uid,
+  }).catch((e) =>
+    console.error("Sessie bijwerken mislukt:", e)
+  );
+}
+
+/** Broadcast als deelnemer: het huidige liedje starten voor alle deelnemers. */
+function broadcastSessionPlaying(playing) {
+  if (!isSessionMember() || !state.session) return;
+  if (state.session.playing === playing) return;
+  state.session.playing = playing;
+  state.session.actorUid = state.user.uid;
+  renderSessionBar();
+  updateSession({ playing, actorUid: state.user.uid }).catch((e) =>
+    console.error("Sessie bijwerken mislukt:", e)
+  );
+}
+
+/** Kandidaten voor de deelnemerslijst (alle bekende bandleden behalve ikzelf). */
+function sessionMemberCandidates() {
+  const now = Date.now();
+  const seen = new Set();
+  const list = [];
+  for (const p of state.presenceList || []) {
+    if (!p || p.id === state.user?.uid) continue;
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    list.push({
+      uid: p.id,
+      name: p.name || "",
+      online: now - toMillis(p.lastSeen) < PRESENCE_ONLINE_MS,
+    });
+  }
+  list.sort((a, b) => (a.online === b.online ? 0 : a.online ? -1 : 1));
+  return list;
+}
+
+/** Open de "start sessie"-modal en vul de deelnemerslijst. */
+function openSessionModal() {
+  if (!state.currentSetlist?.id) {
+    alert("Selecteer eerst een setlist.");
+    return;
+  }
+  if (!state.setlistSongIds.length) {
+    alert("Voeg eerst liedjes toe aan de setlist.");
+    return;
+  }
+  if (state.session) {
+    if (!confirm(`Er loopt al een sessie (van ${memberDisplayName(state.session.leaderName)}). Een nieuwe sessie starten vervangt deze. Doorgaan?`)) {
+      return;
+    }
+  }
+
+  $("#sessionModalSetlist").textContent =
+    `${state.currentSetlist.name || "Setlist"} · ${state.setlistSongIds.length} nummers`;
+
+  const listEl = $("#sessionMembersList");
+  listEl.innerHTML = "";
+  const candidates = sessionMemberCandidates();
+  if (!candidates.length) {
+    listEl.innerHTML =
+      '<p class="text-sm text-gray-400 italic">Geen andere bandleden bekend. De sessie start met jou alleen.</p>';
+  } else {
+    for (const m of candidates) {
+      const row = document.createElement("label");
+      row.className = "flex items-center gap-2 text-sm py-1 cursor-pointer select-none";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = m.online; // online leden staan standaard aangevinkt
+      cb.className = "accent-green-600 shrink-0";
+      cb.dataset.uid = m.uid;
+      cb.dataset.name = m.name || "";
+      const span = document.createElement("span");
+      span.className = "truncate";
+      span.textContent = memberDisplayName(m.name) + (m.online ? "" : " (offline)");
+      row.appendChild(cb);
+      row.appendChild(span);
+      listEl.appendChild(row);
+    }
+  }
+
+  $("#sessionModal").classList.remove("hidden");
+}
+
+/** Sluit de "start sessie"-modal. */
+function closeSessionModal() {
+  $("#sessionModal").classList.add("hidden");
+}
+
+/** Start de sessie daadwerkelijk (aanmaker + aangevinkte deelnemers). */
+async function confirmSessionStart() {
+  if (!state.currentSetlist?.id || !state.setlistSongIds.length) return;
+
+  if (state.session) {
+    if (!confirm(`Er loopt al een sessie (van ${memberDisplayName(state.session.leaderName)}). Een nieuwe sessie starten vervangt deze. Doorgaan?`)) {
+      return;
+    }
+  }
+
+  const members = [{ uid: state.user.uid, name: state.user.email || "" }];
+  document.querySelectorAll("#sessionMembersList input[type=checkbox]:checked").forEach((cb) => {
+    if (cb.dataset.uid && cb.dataset.uid !== state.user.uid) {
+      members.push({ uid: cb.dataset.uid, name: cb.dataset.name || "" });
+    }
+  });
+
+  const songIds = state.setlistSongIds.slice();
+  const payload = {
+    setlistId: state.currentSetlist.id,
+    setlistName: state.currentSetlist.name || "",
+    leaderUid: state.user.uid,
+    leaderName: state.user.email || "",
+    members,
+    songIds,
+    songIndex: 0,
+    playing: false,
+    actorUid: state.user.uid,
+  };
+
+  try {
+    await startSession(payload);
+    state.session = { id: "active", ...payload };
+    renderSessionBar();
+    closeSessionModal();
+    // Open het eerste nummer; deelnemers volgen via de listener.
+    const id = songIds[0];
+    navigate(
+      { view: "song", id, perform: { songIds, index: 0 } },
+      () => openSong(id, { songIds, index: 0 })
+    );
+  } catch (ex) {
+    console.error("Sessie starten mislukt:", ex);
+    alert("Sessie starten mislukt. Controleer je verbinding.");
+  }
+}
+
+/** Start het huidige liedje voor alle deelnemers (eenmalig per nummer). */
+async function toggleSessionPlayback() {
+  if (!isSessionMember() || !state.session) return;
+  const s = state.session;
+
+  // Al gestart? Dan scrollt ieder bandlid nu zelf; niemand stopt een ander.
+  if (s.playing) return;
+
+  const songIds = Array.isArray(s.songIds) ? s.songIds : [];
+  const index = Math.max(0, Math.min(s.songIndex || 0, songIds.length - 1));
+  const songId = songIds[index];
+  if (!songId) {
+    alert("Deze setlist heeft geen liedjes.");
+    return;
+  }
+
+  // Zorg dat het huidige sessienummer op het scherm staat.
+  if (!isLiveMode() || state.currentSong?.id !== songId || state.perform?.index !== index) {
+    const desc = { view: "song", id: songId, perform: { songIds, index } };
+    history.pushState(desc, "");
+    await openSong(songId, { songIds, index });
+  }
+  state.autoscroll = true;
+  if (startAutoScroll()) broadcastSessionPlaying(true);
+}
+
+/** Beëindig de sessie voor iedereen. */
+async function endCurrentSession() {
+  if (!isSessionMember()) return;
+  if (!confirm("Sessie beëindigen? Alle deelnemers stoppen met volgen.")) return;
+  try {
+    await endSession();
+    state.session = null;
+    stopAutoScroll();
+    state.perform = null;
+    state.atSongEnd = false;
+    renderSessionBar();
+    updateSetlistNav();
+    updateScrollButton();
+    // Terug naar de setlistplanner, tenzij we daar al zijn.
+    if ($("#view-setlist").classList.contains("active")) {
+      openSetlist();
+    } else {
+      navigate({ view: "setlist" }, openSetlist);
+    }
+  } catch (ex) {
+    console.error("Sessie beëindigen mislukt:", ex);
+    alert("Sessie beëindigen mislukt. Controleer je verbinding.");
+  }
 }
 
 function toggleFootswitch() {
@@ -1904,19 +2423,120 @@ function toggleFootswitch() {
 $("#topFootswitch").addEventListener("click", toggleFootswitch);
 
 // ---------------------------------------------------------------------------
-//  AUTOSCROLL op basis van BPM (± 4 beats per regel = 2x zo snel als 8 beats)
-//  Tijd per regel = 4 beats × 60/BPM = 240/BPM seconden.
-//  Snelheid = gemiddelde regelhoogte × BPM / 240 (px per seconde).
+//  AUTOSCROLL op basis van BPM
+//  Tijd per regel = BEATS_PER_LINE × 60/BPM seconden (× scrollSpeedFactor).
+//  De actieve regel wordt tijdgebaseerd berekend en blijft via de generieke
+//  scroll-focushelpers altijd op SCROLL_FOCUS_RATIO (50%) van de viewport.
 // ---------------------------------------------------------------------------
 const BEATS_PER_LINE = 4.7; // 15% langzamer dan 4
 let autoScrolling = false;
 let autoRaf = null;
 let autoLastTs = null;
 let autoPos = 0;
+let autoElapsedMs = 0;      // verstreken liedtijd binnen de autoscroll
+let autoIntroDone = false;  // eerste start van dit liedje → intro-scroll naar regel 1
+
+// ---------------------------------------------------------------------------
+//  SCROLL-FOCUS: één bron van waarheid voor "waar staat de actieve regel".
+//  De actieve regel hoort op SCROLL_FOCUS_RATIO × viewport-hoogte onder de
+//  topbar te staan. Wordt gebruikt door BPM-autoscroll, AI Follow en de
+//  intro-scroll.
+// ---------------------------------------------------------------------------
+const SCROLL_FOCUS_RATIO = 0.25; // actieve regel op 25% van de viewport-hoogte
+
+let songLineElsCache = null;
+
+function invalidateSongLineCache() {
+  songLineElsCache = null;
+}
+
+/** De .song-line-elementen in documentvolgorde (licht gecacht). */
+function songLineEls() {
+  if (!songLineElsCache) {
+    songLineElsCache = Array.from(document.querySelectorAll("#songBody .song-line"));
+  }
+  return songLineElsCache;
+}
+
+/** Hoogte van de topbar, indien zichtbaar. */
+function scrollTopbarOffset() {
+  const topbar = document.getElementById("topbar");
+  return topbar && !topbar.classList.contains("hidden") ? topbar.offsetHeight : 0;
+}
+
+/** Scherm-Y waarop de actieve regel moet staan. */
+function scrollFocusScreenY() {
+  return scrollTopbarOffset() + window.innerHeight * SCROLL_FOCUS_RATIO;
+}
+
+/** Maximale scroll-Y van de pagina. */
+function maxScrollY() {
+  const docHeight = Math.max(document.body.offsetHeight, document.documentElement.scrollHeight);
+  return Math.max(0, docHeight - window.innerHeight);
+}
+
+/** Klem een scroll-Y binnen [0, maxScrollY] (randgevallen eerste/laatste regel). */
+function clampScrollY(y) {
+  return Math.max(0, Math.min(maxScrollY(), y));
+}
+
+/** Document-Y van de bovenkant van regel `lineIndex`. */
+function lineDocY(lineIndex) {
+  const lines = songLineEls();
+  const el = lines[lineIndex];
+  if (!el) return null;
+  return window.scrollY + el.getBoundingClientRect().top;
+}
+
+/** Scroll-Y zodat regel `lineIndex` op de focuspositie (50%) staat. */
+function scrollYForLine(lineIndex) {
+  const docY = lineDocY(lineIndex);
+  if (docY == null) return null;
+  return clampScrollY(docY - scrollFocusScreenY());
+}
+
+/** Fractionele regelindex die hoort bij scroll-Y `y` (omgekeerde van hieronder). */
+function fractionalLineIndexFromScrollY(y) {
+  const lines = songLineEls();
+  if (!lines.length) return 0;
+  const focusDocY = y + scrollFocusScreenY();
+  let i0 = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const top = window.scrollY + lines[i].getBoundingClientRect().top;
+    if (top <= focusDocY) i0 = i; else break;
+  }
+  if (i0 < 0) return 0;
+  if (i0 >= lines.length - 1) return lines.length - 1;
+  const y0 = window.scrollY + lines[i0].getBoundingClientRect().top;
+  const y1 = window.scrollY + lines[i0 + 1].getBoundingClientRect().top;
+  const span = y1 - y0;
+  return span > 0 ? i0 + (focusDocY - y0) / span : i0;
+}
+
+/** Integer regelindex bij scroll-Y (voor debug en AI Follow-verwachting). */
+function lineIndexFromScrollY(y) {
+  return Math.floor(fractionalLineIndexFromScrollY(y));
+}
+
+/** Scroll-Y zodat fractionele regelpositie `f` op 50% staat (interpoleert). */
+function scrollYForFractionalLine(f) {
+  const lines = songLineEls();
+  if (!lines.length) return 0;
+  const last = lines.length - 1;
+  const clamped = Math.max(0, Math.min(last, f));
+  const i0 = Math.floor(clamped);
+  const frac = clamped - i0;
+  const y0 = window.scrollY + lines[i0].getBoundingClientRect().top;
+  const y1 = i0 < last
+    ? window.scrollY + lines[i0 + 1].getBoundingClientRect().top
+    : y0 + avgLineHeight();
+  const docY = y0 + (y1 - y0) * frac;
+  return clampScrollY(docY - scrollFocusScreenY());
+}
 
 // Gemiddelde on-screen hoogte van een tekstregel (secties schalen verschillend).
 function avgLineHeight() {
-  const lines = document.querySelectorAll("#songBody .song-line");
+  const lines = songLineEls();
   if (!lines.length) return 0;
   let sum = 0, n = 0;
   lines.forEach((l) => {
@@ -1926,13 +2546,21 @@ function avgLineHeight() {
   return n ? sum / n : 0;
 }
 
+/** Seconden per regel, gecorrigeerd met de per-liedje scrollfactor. */
+function effectiveSecondsPerLine() {
+  const bpm = Number(state.currentSong?.bpm) || 0;
+  if (bpm <= 0) return Infinity;
+  const factor = Number(state.currentSong?.scrollSpeedFactor) || 1.0;
+  return (BEATS_PER_LINE * 60) / bpm / factor;
+}
+
+/** Benadering in px/s (wordt gebruikt als validatie en door andere callers). */
 function autoScrollPxPerSec() {
   const bpm = Number(state.currentSong?.bpm) || 0;
   const lh = avgLineHeight();
   if (bpm <= 0 || lh <= 0) return 0;
   const secondsPerLine = (BEATS_PER_LINE * 60) / bpm;
   let speed = lh / secondsPerLine;
-  // Pas aan met de per-liedje correctiefactor (standaard 1.0).
   const factor = Number(state.currentSong?.scrollSpeedFactor) || 1.0;
   speed *= factor;
   return speed;
@@ -1943,14 +2571,35 @@ function autoStep(ts) {
   const dt = (ts - autoLastTs) / 1000;
   autoLastTs = ts;
 
-  const speed = autoScrollPxPerSec();
-  if (speed <= 0) { stopAutoScroll(); return; }
+  if (autoScrollPxPerSec() <= 0) { stopAutoScroll(); return; }
 
-  autoPos += speed * dt;
+  const secPerLine = effectiveSecondsPerLine();
+  if (!isFinite(secPerLine) || secPerLine <= 0) { stopAutoScroll(); return; }
+
+  // Tijdgebaseerd regelanker: welke (fractionele) regel is nu actief?
+  autoElapsedMs += dt * 1000;
+  const activeLine = autoElapsedMs / 1000 / secPerLine;
+
+  // Zet die regel op de focuspositie van de viewport.
+  autoPos = scrollYForFractionalLine(activeLine);
+
   window.scrollTo(0, autoPos);
 
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  if (window.scrollY >= max - 1) { stopAutoScroll(); updateEndArming(); return; } // onderaan: stop (+ live-modus arming)
+  // Einde liedje: de laatste regel is op de focuspositie geweest.
+  if (activeLine >= songLineEls().length - 1) {
+    stopAutoScroll();
+    updateEndArming({ forceEnd: true });
+    return;
+  }
+
+  // Vangnet: stop ook als de effectieve bodem bereikt is (de laatste regel
+  // kan niet altijd gecentreerd worden; dan verzachten we richting de bodem).
+  const max = maxScrollY();
+  if (max > 1 && window.scrollY >= max - 1) {
+    stopAutoScroll();
+    updateEndArming();
+    return;
+  }
 
   autoRaf = requestAnimationFrame(autoStep);
 }
@@ -1958,19 +2607,67 @@ function autoStep(ts) {
 function startAutoScroll() {
   if (autoScrollPxPerSec() <= 0) {
     alert("Stel eerst een BPM in voor dit liedje om autoscroll te gebruiken.");
+    return false;
+  }
+  autoScrolling = true;
+  setMediaSessionPlaybackState("playing");
+  updateScrollButton();
+
+  const secPerLine = effectiveSecondsPerLine();
+
+  // Alleen bij de éérste start van dit liedje vloeiend naar de eerste regel
+  // (op 50%). Bij hervatten reconstrueren we de verstreken tijd uit de
+  // huidige scrollpositie, zodat er geen sprong is.
+  if (!autoIntroDone) {
+    autoIntroDone = true;
+    const target = scrollYForLine(0);
+    smoothScrollTo(target == null ? 0 : target, 450, () => {
+      if (!autoScrolling) return; // gestopt tijdens de intro-scroll
+      autoElapsedMs = 0;
+      autoPos = window.scrollY;
+      autoLastTs = null;
+      autoRaf = requestAnimationFrame(autoStep);
+    });
+  } else {
+    autoElapsedMs = fractionalLineIndexFromScrollY(window.scrollY) * secPerLine * 1000;
+    autoPos = window.scrollY;
+    autoLastTs = null;
+    autoRaf = requestAnimationFrame(autoStep);
+  }
+  return true;
+}
+
+/** Vloeiende scroll-animatie naar `targetY` (gebruikt door de intro-scroll). */
+function smoothScrollTo(targetY, durationMs, done) {
+  const startY = window.scrollY;
+  const dist = targetY - startY;
+  if (Math.abs(dist) < 2) {
+    done();
     return;
   }
-  autoPos = window.scrollY;
-  autoLastTs = null;
-  autoScrolling = true;
-  autoRaf = requestAnimationFrame(autoStep);
-  updateScrollButton();
+
+  const startTs = performance.now();
+  const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
+  function frame(ts) {
+    if (!autoScrolling) return; // stopzetting tijdens de animatie
+    const t = Math.min(1, (ts - startTs) / durationMs);
+    window.scrollTo(0, startY + dist * ease(t));
+    if (t < 1) {
+      autoRaf = requestAnimationFrame(frame);
+    } else {
+      autoRaf = null;
+      done();
+    }
+  }
+  autoRaf = requestAnimationFrame(frame);
 }
 
 function stopAutoScroll() {
   autoScrolling = false;
   if (autoRaf) cancelAnimationFrame(autoRaf);
   autoRaf = null;
+  setMediaSessionPlaybackState("paused");
   updateScrollButton();
 }
 
@@ -1978,6 +2675,7 @@ function stopAutoScroll() {
 function updateScrollButton() {
   const btn = $("#scrollDownBtn");
   if (!btn) return;
+  btn.style.display = "";
 
   // Live-modus én aan het einde: toon de "volgend nummer"-status.
   if (isLiveMode() && state.atSongEnd) {
@@ -1999,7 +2697,7 @@ function updateScrollButton() {
   }
 
   btn.classList.remove("next-armed");
-  if (state.autoscroll) {
+  if (state.autoscroll || autoScrolling) {
     btn.innerHTML = autoScrolling ? "&#10073;&#10073;" : "&#9654;"; // pauze : play
     btn.title = autoScrolling ? "Autoscroll pauzeren" : "Autoscroll starten";
   } else {
@@ -2940,6 +3638,259 @@ $("#seedChordsFromUi").addEventListener("click", async () => {
 });
 
 // ===========================================================================
+//  PIANO-AKKOORDENBEHEER (CRUD voor de 'pianoChords' collectie)
+// ===========================================================================
+
+const PIANO_NOTE_OPTIONS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+/** Open de piano-akkoordenbeheerpagina. */
+function openPianoChords() {
+  showView("piano-chords");
+  resetPianoChordForm();
+  loadPianoChordsList();
+}
+
+/** HTML voor één noten/vinger-rij (maximaal 4 rijen in het formulier). */
+function pianoNoteRowHtml(note = "", finger = 1) {
+  const opts = ['<option value="">—</option>']
+    .concat(PIANO_NOTE_OPTIONS.map((n) => `<option ${n === note ? "selected" : ""}>${n}</option>`))
+    .join("");
+  return `<div class="piano-note-row flex items-center gap-2">
+    <select class="piano-note-select w-24 border border-gray-300 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">${opts}</select>
+    <span class="text-xs text-gray-400">vinger</span>
+    <input type="number" min="1" max="4" value="${finger}" class="piano-finger-input w-16 border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
+  </div>`;
+}
+
+/** Render de 4 noten-rijen in het formulier. */
+function renderPianoNoteRows(notes = [], fingers = []) {
+  const wrap = $("#pianoNoteRows");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  for (let i = 0; i < 4; i++) {
+    wrap.insertAdjacentHTML("beforeend", pianoNoteRowHtml(notes[i] || "", fingers[i] || i + 1));
+  }
+}
+
+/** Reset het piano-akkoordformulier naar 'nieuw'-modus. */
+function resetPianoChordForm() {
+  $("#pianoChordEditId").value = "";
+  $("#pianoChordFormTitle").textContent = "Nieuw piano-akkoord toevoegen";
+  $("#fPianoChordName").value = "";
+  renderPianoNoteRows();
+  $("#pianoChordCancelBtn").classList.add("hidden");
+  $("#pianoChordPreview").classList.add("hidden");
+}
+
+/** Lees het piano-akkoordformulier uit. */
+function readPianoChordForm() {
+  const notes = [];
+  const fingers = [];
+  document.querySelectorAll("#pianoNoteRows .piano-note-row").forEach((row) => {
+    const note = row.querySelector(".piano-note-select").value;
+    if (!note) return;
+    const fingerVal = parseInt(row.querySelector(".piano-finger-input").value);
+    notes.push(note);
+    fingers.push(Number.isNaN(fingerVal) ? notes.length : Math.min(4, Math.max(1, fingerVal)));
+  });
+  return {
+    chordName: $("#fPianoChordName").value.trim(),
+    notes,
+    fingers,
+  };
+}
+
+/** Vul het formulier met bestaande data (bewerk-modus). */
+function fillPianoChordForm(chordData) {
+  $("#pianoChordEditId").value = chordData.id || chordData.chordName;
+  $("#pianoChordFormTitle").textContent = `Piano-akkoord bewerken: ${chordData.chordName}`;
+  $("#fPianoChordName").value = chordData.chordName || "";
+  renderPianoNoteRows(chordData.notes || [], chordData.fingers || []);
+  $("#pianoChordCancelBtn").classList.remove("hidden");
+  updatePianoChordPreview();
+}
+
+/** Live preview van het piano-akkoord in het formulier. */
+function updatePianoChordPreview() {
+  const data = readPianoChordForm();
+  const preview = $("#pianoChordPreview");
+  if (!preview) return;
+  if (!data.notes.length) {
+    preview.classList.add("hidden");
+    return;
+  }
+  try {
+    const svg = renderPianoChordSVG(data.chordName || "?", data.notes.length ? data : null);
+    preview.innerHTML = svg;
+    preview.classList.remove("hidden");
+  } catch (ex) {
+    // negeer renderfouten tijdens typen
+  }
+}
+
+/** Laad en render de piano-akkoordenlijst. */
+async function loadPianoChordsList(filter = "") {
+  const list = $("#pianoChordsList");
+  list.innerHTML = '<p class="text-gray-400 text-sm italic">Laden…</p>';
+
+  let chords = [];
+  try {
+    chords = await getAllPianoChords();
+    for (const ch of chords) {
+      state.pianoChordCache[ch.id] = ch;
+    }
+  } catch (ex) {
+    console.error("Piano-akkoorden laden mislukt:", ex);
+    chords = Object.values(state.pianoChordCache);
+  }
+
+  const term = filter.toLowerCase().trim();
+  if (term) {
+    chords = chords.filter((c) => (c.id || "").toLowerCase().includes(term));
+  }
+  chords.sort((a, b) => (a.id || "").localeCompare(b.id || ""));
+
+  list.innerHTML = "";
+  $("#pianoChordsEmpty").classList.toggle("hidden", chords.length > 0);
+
+  for (const ch of chords) {
+    const card = document.createElement("div");
+    card.className = "bg-white rounded-xl shadow-sm hover:shadow-md transition flex items-center";
+
+    const preview = document.createElement("div");
+    preview.className = "shrink-0 p-2";
+    try {
+      const miniSvg = renderPianoChordSVG(ch.id, ch.notes?.length ? ch : null);
+      preview.innerHTML = miniSvg.replace(
+        /style="[^"]*"/,
+        'style="width:120px;height:auto;display:block"'
+      );
+    } catch (_) {
+      preview.innerHTML = `<div class="w-[120px] h-[60px] bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs">?</div>`;
+    }
+
+    const info = document.createElement("button");
+    info.className = "flex-1 text-left p-3 min-w-0";
+    info.innerHTML = `<div class="font-semibold">${escapeHtml(ch.id || "?")}</div>
+      <div class="text-xs text-gray-500">${escapeHtml((ch.notes || []).join(" ")) || "geen noten"}</div>`;
+    info.addEventListener("click", () => {
+      fillPianoChordForm(ch);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    const del = document.createElement("button");
+    del.className = "shrink-0 px-4 py-4 text-gray-300 hover:text-red-600";
+    del.textContent = "🗑";
+    del.title = "Piano-akkoord verwijderen";
+    del.addEventListener("click", () => onDeletePianoChord(ch));
+
+    card.appendChild(preview);
+    card.appendChild(info);
+    card.appendChild(del);
+    list.appendChild(card);
+  }
+}
+
+/** Verwijder een piano-akkoord. */
+async function onDeletePianoChord(chord) {
+  if (!confirm(`Piano-akkoord "${chord.id}" verwijderen?`)) return;
+  try {
+    await deletePianoChord(chord.id);
+    delete state.pianoChordCache[chord.id];
+    loadPianoChordsList($("#pianoChordSearch").value);
+  } catch (ex) {
+    console.error("Verwijderen mislukt:", ex);
+    alert("Verwijderen mislukt. Controleer je verbinding.");
+  }
+}
+
+// --- Event handlers ---------------------------------------------------------
+
+$("#openPianoChordsBtn").addEventListener("click", () => navigate({ view: "piano-chords" }, openPianoChords));
+
+$("#pianoChordSearch").addEventListener("input", (e) => loadPianoChordsList(e.target.value));
+
+$("#pianoChordForm").addEventListener("input", updatePianoChordPreview);
+
+// Vul de noten automatisch in op basis van de akkoordnaam.
+$("#pianoAutoFillBtn").addEventListener("click", () => {
+  const name = $("#fPianoChordName").value.trim();
+  if (!name) {
+    alert("Vul eerst een akkoordnaam in (bijv. C7).");
+    return;
+  }
+  const parsed = chordToNotes(name);
+  if (!parsed) {
+    alert("Kon deze akkoordnaam niet herkennen. Je kunt de noten ook handmatig kiezen.");
+    return;
+  }
+  const voicing = chordVoicing(parsed);
+  const notes = voicing.map((v) => pitchClassName(v.midi % 12));
+  const fingers = voicing.map((v) => v.finger);
+  renderPianoNoteRows(notes, fingers);
+  updatePianoChordPreview();
+});
+
+$("#pianoChordForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const data = readPianoChordForm();
+  if (!data.chordName) return;
+  if (!data.notes.length) {
+    alert("Voeg minstens één noot toe.");
+    return;
+  }
+
+  const docId = data.chordName; // document-id = akkoordnaam
+  try {
+    await setPianoChord(docId, {
+      chordName: data.chordName,
+      notes: data.notes,
+      fingers: data.fingers,
+    });
+    state.pianoChordCache[docId] = {
+      id: docId,
+      chordName: data.chordName,
+      notes: data.notes,
+      fingers: data.fingers,
+    };
+    const term = $("#pianoChordSearch").value;
+    resetPianoChordForm();
+    loadPianoChordsList(term);
+  } catch (ex) {
+    console.error("Opslaan mislukt:", ex);
+    alert("Opslaan mislukt. Controleer je verbinding.");
+  }
+});
+
+$("#pianoChordCancelBtn").addEventListener("click", resetPianoChordForm);
+
+// Seed-knop: genereer piano-akkoorden uit de voorbeeld-akkoordnamen.
+$("#pianoSeedBtn").addEventListener("click", async () => {
+  const btn = $("#pianoSeedBtn");
+  btn.disabled = true;
+  btn.textContent = "⏳ Bezig...";
+  try {
+    const names = [...new Set(EXAMPLE_CHORDS.map((c) => c.id))];
+    for (const name of names) {
+      const parsed = chordToNotes(name);
+      if (!parsed) continue;
+      const voicing = chordVoicing(parsed);
+      const notes = voicing.map((v) => pitchClassName(v.midi % 12));
+      const fingers = voicing.map((v) => v.finger);
+      await setPianoChord(name, { chordName: name, notes, fingers });
+      state.pianoChordCache[name] = { id: name, chordName: name, notes, fingers };
+    }
+    loadPianoChordsList($("#pianoChordSearch").value);
+  } catch (ex) {
+    console.error("Seed mislukt:", ex);
+    alert("Seed mislukt. Controleer je verbinding.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "🌱 Seed voorbeelden";
+  }
+});
+
+// ===========================================================================
 //  HULPFUNCTIES
 // ===========================================================================
 function escapeHtml(str) {
@@ -3035,6 +3986,12 @@ function startRealtime() {
     renderPracticeMembers();
   });
 
+  // Actieve setlist-sessie: deelnemers volgen elkaars sessie-acties realtime.
+  if (state.sessionUnsub) state.sessionUnsub();
+  state.sessionUnsub = watchSession((session) => {
+    handleSessionUpdate(session);
+  });
+
   // Takenlijst: live meeluisteren (gedeeld met de hele band).
   if (state.todosUnsub) state.todosUnsub();
   state.todosUnsub = watchTodos((todos) => {
@@ -3059,10 +4016,13 @@ function teardownRealtime(prevUid) {
   if (state.presenceUnsub) { state.presenceUnsub(); state.presenceUnsub = null; }
   if (state.practiceUnsub) { state.practiceUnsub(); state.practiceUnsub = null; }
   if (state.requiredUnsub) { state.requiredUnsub(); state.requiredUnsub = null; }
+  if (state.sessionUnsub) { state.sessionUnsub(); state.sessionUnsub = null; }
   if (state.todosUnsub) { state.todosUnsub(); state.todosUnsub = null; }
   state.presenceList = [];
   state.lastPracticeNonce = null;
   state.requiredMembers = [];
+  state.session = null;
+  renderSessionBar();
   currentPractice = null;
   todoState.items = [];
   hidePracticeToast();
@@ -3369,3 +4329,4 @@ $("#practiceToastOpenBtn").addEventListener("click", () => {
   hidePracticeToast();
   if (id) navigate({ view: "song", id }, () => openSong(id));
 });
+

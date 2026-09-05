@@ -1,4 +1,10 @@
 {
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "functions": {
+    "source": "functions"
+  },
   "hosting": [
     {
       "target": "test",
@@ -11,6 +17,7 @@
         ".git/**",
         ".firebase",
         ".firebase/**",
+        "functions/**",
         "**/.*",
         "**/node_modules/**",
         "Kolonel & The Parkers - Songbeheer*.html",
@@ -28,6 +35,7 @@
         ".git/**",
         ".firebase",
         ".firebase/**",
+        "functions/**",
         "**/.*",
         "**/node_modules/**",
         "Kolonel & The Parkers - Songbeheer*.html",

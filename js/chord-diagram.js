@@ -126,12 +126,17 @@ function escapeXml(s) {
 /**
  * Toon de chord modal.
  * @param {string} svgString - de SVG-string
+ * @param {{wide?: boolean}} [options] - wide = bredere modal (voor piano)
  */
-export function showChordModal(svgString) {
+export function showChordModal(svgString, { wide = false } = {}) {
   const modal = document.getElementById("chordModal");
   const svgContainer = document.getElementById("chordModalSvg");
+  const body = document.getElementById("chordModalBody");
   if (!modal || !svgContainer) return;
   svgContainer.innerHTML = svgString;
+  // De gitaargreep past in een smalle kaart; het pianoklavier heeft meer ruimte
+  // nodig. Inline style overschrijft de Tailwind max-w-klasse betrouwbaar.
+  if (body) body.style.maxWidth = wide ? "min(94vw, 560px)" : "min(94vw, 260px)";
   modal.classList.remove("hidden");
 }
 

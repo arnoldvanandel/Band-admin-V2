@@ -1,0 +1,11 @@
+{
+  "name": "band-admin-functions",
+  "description": "Cloud Functions voor Band Admin (Kolonel & The Parkers Songbeheer)",
+  "private": true,
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "firebase-functions": "^6.3.0"
+  }
+}
