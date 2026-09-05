@@ -75,6 +75,7 @@ const state = {
     enableDrawMode: true,      // canvas-tekenmodus aan/uit
     rehearsing: false,         // "ik ben aan het repeteren" → ontvang oefenkeuzes
     chordDisplay: "guitar",    // "guitar" | "piano" — wat toon je bij klik op een akkoord
+    theme: "dark",             // "dark" (donker/goud) | "light" (origineel)
   },
   // Setlist management:
   currentSetlist: null,        // geladen setlist-document (id, name, date, songIds)
@@ -937,6 +938,13 @@ function applySettingsToUI() {
   updateScrollButton();
   // Teken-icoontjes verbergen/tonen op basis van instelling
   $("#drawToolbar").style.display = state.settings.enableDrawMode ? "" : "none";
+  applyThemeSetting();
+}
+
+/** Zet het gekozen design aan/uit via de theme-bandadmin stylesheet. */
+function applyThemeSetting() {
+  const link = document.getElementById("themeBandAdmin");
+  if (link) link.disabled = state.settings.theme !== "dark";
 }
 
 /** Zet de zwevende scrollknop links- of rechtsonder volgens de user settings. */
@@ -952,12 +960,14 @@ async function saveUserSettings() {
   const readingMode = document.querySelector('input[name="readingMode"]:checked')?.value || "footswitch";
   const scrollButtonPosition = document.querySelector('input[name="scrollButtonPosition"]:checked')?.value || "left";
   const chordDisplay = document.querySelector('input[name="chordDisplay"]:checked')?.value || "guitar";
+  const theme = document.querySelector('input[name="theme"]:checked')?.value || "dark";
   const settings = {
     readingMode,
     scrollButtonPosition,
     enableDrawMode: $("#settingsDrawMode").checked,
     rehearsing: $("#settingsRehearsing").checked,
     chordDisplay,
+    theme,
   };
   state.settings = settings;
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -980,6 +990,8 @@ function openSettings() {
   if (posRadio) posRadio.checked = true;
   const chordRadio = document.querySelector(`input[name="chordDisplay"][value="${state.settings.chordDisplay || "guitar"}"]`);
   if (chordRadio) chordRadio.checked = true;
+  const themeRadio = document.querySelector(`input[name="theme"][value="${state.settings.theme || "dark"}"]`);
+  if (themeRadio) themeRadio.checked = true;
   $("#settingsDrawMode").checked = state.settings.enableDrawMode;
   $("#settingsRehearsing").checked = state.settings.rehearsing;
   $("#myInstrument").value = state.myInstrument;

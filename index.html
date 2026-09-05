@@ -773,6 +773,28 @@
           <span id="myInstrumentSaved" class="text-xs text-green-600 hidden">opgeslagen ✓</span>
         </div>
 
+        <!-- Keuze: design/thema -->
+        <fieldset class="border-b border-gray-200 pb-4">
+          <legend class="font-medium mb-1">🎨 Design</legend>
+          <p class="text-xs text-gray-500 mb-3">Kies hoe de app eruitziet.</p>
+          <div class="space-y-2">
+            <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <input type="radio" name="theme" value="light" class="w-4 h-4 text-blue-600">
+              <div>
+                <p class="font-medium text-sm">☀️ Licht (origineel)</p>
+                <p class="text-xs text-gray-500">Het vertrouwde lichte thema</p>
+              </div>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <input type="radio" name="theme" value="dark" class="w-4 h-4 text-blue-600">
+              <div>
+                <p class="font-medium text-sm">🌙 Donker met goud</p>
+                <p class="text-xs text-gray-500">Donkere achtergrond met gouden accenten</p>
+              </div>
+            </label>
+          </div>
+        </fieldset>
+
         <!-- Keuze: akkoordweergave bij klikken (gitaar of piano) -->
         <fieldset class="border-b border-gray-200 pb-4">
           <legend class="font-medium mb-1">🎵 Akkoordweergave</legend>
@@ -1267,15 +1289,15 @@
   <script type="module" src="js/app.js"></script>
 
   <script>
-    // Thema-test: ?thema=uit in de URL of themaUit=1 in localStorage zet het
-    // donkere thema uit. Weghalen zodra de test klaar is.
+    // Vroeg toepassen van de opgeslagen design-keuze, zodat er geen
+    // verkeerde thema-flits is voordat app.js de instellingen laadt.
     (function () {
       var l = document.getElementById('themeBandAdmin');
       if (!l) return;
-      var p = new URLSearchParams(location.search).get('thema');
-      if (p === 'uit') localStorage.setItem('themaUit', '1');
-      if (p === 'aan') localStorage.removeItem('themaUit');
-      l.disabled = localStorage.getItem('themaUit') === '1';
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || 'null');
+        if (s && s.theme) l.disabled = s.theme !== 'dark';
+      } catch (e) { /* negeer ongeldige cache */ }
     })();
   </script>
 </html>
